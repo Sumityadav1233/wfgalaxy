@@ -2,23 +2,28 @@ import React from 'react';
 import Link from 'next/link';
 import ProductGrid from '@/components/storefront/ProductGrid';
 import { Play } from 'lucide-react';
-import { createClient } from '@/lib/supabase/server';
+import { createPublicClient } from '@/lib/supabase/server';
 
 export const revalidate = 60; // Revalidate every minute
 
 async function getLatestProducts() {
-  const supabase = await createClient();
-  const { data: products, error } = await supabase
-    .from('products')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .limit(10);
+  try {
+    const supabase = createPublicClient();
+    const { data: products, error } = await supabase
+      .from('products')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(10);
 
-  if (error) {
-    console.error('Error fetching latest products:', error);
+    if (error) {
+      console.error('Error fetching latest products:', error);
+      return [];
+    }
+    return products || [];
+  } catch (err) {
+    console.error('Exception in getLatestProducts:', err);
     return [];
   }
-  return products || [];
 }
 
 export default async function HomePage() {

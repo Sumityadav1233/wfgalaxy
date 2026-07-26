@@ -1,5 +1,5 @@
 import React from 'react';
-import { createClient } from '@/lib/supabase/server';
+import { createPublicClient } from '@/lib/supabase/server';
 import prisma from '@/lib/db';
 import { notFound } from 'next/navigation';
 import ProductDetailClient from '@/components/storefront/ProductDetailClient';
@@ -14,7 +14,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
 
   // 1. Attempt lookup in Supabase
   try {
-    const supabase = await createClient();
+    const supabase = createPublicClient();
     const { data } = await supabase
       .from('products')
       .select('*')

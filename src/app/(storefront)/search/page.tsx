@@ -1,6 +1,6 @@
 import React from 'react';
 import ProductGrid from '@/components/storefront/ProductGrid';
-import { createClient } from '@/lib/supabase/server';
+import { createPublicClient } from '@/lib/supabase/server';
 import prisma from '@/lib/db';
 import { Search, RotateCcw } from 'lucide-react';
 import Link from 'next/link';
@@ -25,7 +25,7 @@ export default async function SearchPage({
   if (query) {
     // 2. Query Supabase using ILIKE for case-insensitive partial match
     try {
-      const supabase = await createClient();
+      const supabase = createPublicClient();
       
       // Attempt 1: Search across name, description, category, subcategory
       const { data: supaData, error: supaError } = await supabase

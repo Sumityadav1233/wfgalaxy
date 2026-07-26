@@ -1,49 +1,53 @@
 import React from 'react';
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase/server';
+import { createPublicClient } from '@/lib/supabase/server';
 import CategoryClient from '../[category]/CategoryClient';
 
 export const revalidate = 60; // 60s ISR caching for lightning fast CDN responses
 
 export default async function MenCategoryPage() {
-  const supabase = await createClient();
-  
-  // 1. Find the "men" category ID
-  const { data: categoryData } = await supabase
-    .from('categories')
-    .select('id')
-    .ilike('name', 'men')
-    .single();
+  let subcategories: string[] = [
+    'T-Shirt', 'Pant', 'Hoodies', 'Jacket', 'Formal', 
+    'Vest', 'Shirts', 'Sweaters', 'Jeans', 'Trackpants', 'Kurta'
+  ];
+  let products: any[] = [];
 
-  let subcategories: string[] = [];
+  try {
+    const supabase = createPublicClient();
+    
+    // 1. Find the "men" category ID
+    const { data: categoryData } = await supabase
+      .from('categories')
+      .select('id')
+      .ilike('name', 'men')
+      .single();
 
-  // 2. Fetch its subcategories
-  if (categoryData) {
-    const { data: subs } = await supabase
-      .from('subcategories')
-      .select('name')
-      .eq('category_id', categoryData.id)
-      .order('name');
-      
-    if (subs) {
-      subcategories = subs.map(s => s.name);
+    // 2. Fetch its subcategories
+    if (categoryData) {
+      const { data: subs } = await supabase
+        .from('subcategories')
+        .select('name')
+        .eq('category_id', categoryData.id)
+        .order('name');
+        
+      if (subs && subs.length > 0) {
+        subcategories = subs.map(s => s.name);
+      }
     }
-  }
 
-  // Fallback subcategories if DB is empty
-  if (subcategories.length === 0) {
-    subcategories = [
-      'T-Shirt', 'Pant', 'Hoodies', 'Jacket', 'Formal', 
-      'Vest', 'Shirts', 'Sweaters', 'Jeans', 'Trackpants', 'Kurta'
-    ];
-  }
+    // 3. Fetch products for Men
+    const { data: prods } = await supabase
+      .from('products')
+      .select('*')
+      .ilike('category', 'men')
+      .order('created_at', { ascending: false });
 
-  // 3. Fetch products for Men
-  const { data: products } = await supabase
-    .from('products')
-    .select('*')
-    .ilike('category', 'men')
-    .order('created_at', { ascending: false });
+    if (prods) {
+      products = prods;
+    }
+  } catch (err) {
+    console.error('Error loading Men page data:', err);
+  }
 
   return (
     <div className="w-full">
@@ -80,7 +84,7 @@ export default async function MenCategoryPage() {
       <CategoryClient
         categoryName="Men"
         subcategories={subcategories}
-        initialProducts={products || []}
+        initialProducts={products}
         description="Filter and discover items from our complete men's collection below."
       />
     </div>
