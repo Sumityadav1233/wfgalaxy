@@ -32,7 +32,7 @@ export default async function HomePage() {
   return (
     <div className="flex flex-col">
       {/* Redesigned Hero Section */}
-      <section className="relative bg-[#FAF9F6] pt-24 pb-8 md:py-20 md:h-[90vh] md:min-h-[600px] flex items-center">
+      <section className="relative bg-[#FAF9F6] pt-20 pb-4 md:py-20 md:h-[90vh] md:min-h-[600px] flex items-center">
         {/* Desktop Only Background Image */}
         <div className="hidden md:block absolute inset-0 z-0">
           <img 
@@ -42,15 +42,11 @@ export default async function HomePage() {
           />
         </div>
 
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10 w-full flex flex-col md:flex-row items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full flex flex-col md:flex-row items-center justify-between">
           
-          {/* Mobile Clean Hero Layout (Rearranged & Proportioned Reel Video Card) */}
-          <div className="w-full md:hidden flex flex-col items-center text-center">
-            {/* Brand Logo */}
-            <img src="/logo.png" alt="WF GALAXY Logo" className="h-16 w-auto object-contain mb-4" />
-
-            {/* Perfectly Rearranged Auto-playing Reel Video Card */}
-            <Link href="/men" className="w-full max-w-[330px] aspect-[4/5] rounded-3xl overflow-hidden shadow-2xl border border-gray-200 relative group block my-1 bg-black">
+          {/* Mobile Clean Hero Layout (Full Width Reel Video Card, No Duplicate Logo) */}
+          <div className="w-full md:hidden flex flex-col items-center">
+            <Link href="/men" className="w-full rounded-3xl overflow-hidden shadow-2xl border border-gray-200 aspect-[4/5] relative group block bg-black">
               <video 
                 src="/hero-video.mp4" 
                 autoPlay 
