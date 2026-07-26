@@ -44,36 +44,22 @@ export default async function HomePage() {
 
         <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10 w-full flex flex-col md:flex-row items-center justify-between">
           
-          {/* Mobile Clean Hero Layout (App-like & Clutter-Free) */}
-          <div className="w-full md:hidden flex flex-col items-center text-center py-6">
+          {/* Mobile Clean Hero Layout (Instagram Video Reel & Brand Logo) */}
+          <div className="w-full md:hidden flex flex-col items-center text-center py-4">
             {/* Brand Logo */}
-            <img src="/logo.png" alt="WF GALAXY Logo" className="h-20 w-auto object-contain mb-6" />
+            <img src="/logo.png" alt="WF GALAXY Logo" className="h-16 w-auto object-contain mb-4" />
 
-            {/* Short Punchy 3-Word Headline */}
-            <h1 className="font-serif text-4xl font-bold text-[#3B2A20] tracking-tight leading-tight mb-6">
-              Style That Speaks.
-            </h1>
-
-            {/* Single Large Contrast CTA Button */}
-            <Link 
-              href="/shop" 
-              className="bg-[#3B2A20] text-white px-10 py-4 rounded-full font-bold text-sm uppercase tracking-widest hover:bg-[#F5820B] transition-all shadow-lg active:scale-95 mb-8"
-            >
-              Shop Now
-            </Link>
-
-            {/* Clean Feature Image Below Button (Stylish Men's Collection Banner) */}
-            <Link href="/men" className="w-full max-w-xs rounded-3xl overflow-hidden shadow-xl border border-gray-100 aspect-[4/5] relative group block">
-              <img 
-                src="https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?q=80&w=800&auto=format&fit=crop" 
-                alt="Stylish Men's Collection" 
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            {/* Instagram Reel Video Player Container (Square/Rectangular Crop Shape) */}
+            <div className="w-full max-w-xs rounded-3xl overflow-hidden shadow-2xl border border-gray-200 aspect-square relative bg-black flex items-center justify-center my-2">
+              <iframe 
+                src="https://www.instagram.com/reel/DUKEUfskp-7/embed" 
+                className="w-full h-[125%] -mt-[12%] border-0" 
+                allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+                allowFullScreen 
+                scrolling="no" 
+                title="WF GALAXY Instagram Reel"
               />
-              <div className="absolute bottom-3 left-3 right-3 bg-white/90 backdrop-blur-md p-3.5 rounded-2xl flex justify-between items-center shadow-xs">
-                <span className="font-serif text-xs font-bold text-[#3B2A20]">Men's Collection 2026</span>
-                <span className="text-xs font-bold text-[#F5820B]">Explore &rarr;</span>
-              </div>
-            </Link>
+            </div>
           </div>
 
           {/* Desktop Rich Glassmorphism Layout */}
