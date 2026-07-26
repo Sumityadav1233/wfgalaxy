@@ -1,7 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
+import { Heart } from 'lucide-react';
 
 interface ProductCardProps {
   product: any;
@@ -30,18 +31,38 @@ function parseProductImages(product: any): string[] {
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
+  const [isLiked, setIsLiked] = useState(false);
   const images = parseProductImages(product);
   const mainImage = images[0];
   const secondImage = images[1] || mainImage;
 
+  const toggleWishlist = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsLiked(prev => !prev);
+  };
+
   return (
     <Link href={`/product/${product.id}`} className="group block w-full">
-      <div className="relative aspect-3/4 overflow-hidden bg-gray-100 rounded-sm mb-4">
+      <div className="relative aspect-[3/4] overflow-hidden bg-[#F5F4F0] rounded-2xl mb-3 shadow-xs transition-all duration-300 group-hover:shadow-md">
+        {/* New Badge */}
         {product.is_latest && (
-          <div className="absolute top-3 left-3 z-10 bg-white text-[#3B2A20] text-xs font-bold px-2 py-1 uppercase tracking-wider">
+          <div className="absolute top-2.5 left-2.5 z-10 bg-[#3B2A20] text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shadow-xs">
             New
           </div>
         )}
+
+        {/* Wishlist Heart Icon Button (Top Right of Card) */}
+        <button
+          type="button"
+          onClick={toggleWishlist}
+          className="absolute top-2.5 right-2.5 z-10 p-2 rounded-full bg-white/80 backdrop-blur-xs text-gray-700 hover:text-red-500 hover:bg-white shadow-xs transition-all transform active:scale-90"
+          aria-label="Add to Wishlist"
+        >
+          <Heart className={`w-4 h-4 transition-colors ${isLiked ? 'fill-red-500 text-red-500' : 'text-gray-600'}`} />
+        </button>
+
+        {/* Main Product Image */}
         <img
           src={mainImage}
           alt={product.name}
@@ -50,6 +71,8 @@ export default function ProductCard({ product }: ProductCardProps) {
             (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=600&auto=format&fit=crop';
           }}
         />
+
+        {/* Second Hover Image */}
         <img
           src={secondImage}
           alt={product.name}
@@ -59,9 +82,18 @@ export default function ProductCard({ product }: ProductCardProps) {
           }}
         />
       </div>
-      <div className="flex flex-col space-y-1">
-        <h3 className="font-serif text-lg text-[#3B2A20] font-medium">{product.name}</h3>
-        <p className="text-sm text-gray-500">Rs. {Number(product.price || 0).toLocaleString()}</p>
+
+      {/* Card Info */}
+      <div className="flex flex-col space-y-1 px-1">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+          {product.category || 'WF GALAXY'}
+        </span>
+        <h3 className="font-sans text-sm md:text-base text-[#3B2A20] font-semibold line-clamp-2 group-hover:text-[#F5820B] transition-colors leading-snug">
+          {product.name}
+        </h3>
+        <p className="text-sm font-bold text-[#3B2A20] pt-0.5">
+          Rs. {Number(product.price || 0).toLocaleString()}
+        </p>
       </div>
     </Link>
   );

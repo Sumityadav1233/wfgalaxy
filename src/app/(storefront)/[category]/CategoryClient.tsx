@@ -154,7 +154,7 @@ export default function CategoryClient({
   return (
     <div className="pt-32 pb-24 max-w-7xl mx-auto px-6 lg:px-8 w-full">
       {/* Header */}
-      <div className="text-center mb-12">
+      <div className="text-center mb-8">
         <h1 className="text-4xl md:text-5xl font-serif font-bold text-[#3B2A20] mb-4">
           {displayTitle} {categoryName.toLowerCase().includes('collection') ? '' : 'Collection'}
         </h1>
@@ -162,6 +162,38 @@ export default function CategoryClient({
           {description || `Explore our premium range of ${displayTitle.toLowerCase()} products, crafted with uncompromising quality.`}
         </p>
       </div>
+
+      {/* Horizontal Scrollable Category Pill Tab Bar */}
+      {availableSubcategories.length > 0 && (
+        <div className="mb-8 overflow-x-auto no-scrollbar flex items-center gap-2 py-2 px-1 -mx-2 sm:mx-0">
+          <button
+            onClick={() => setSelectedSubs([])}
+            className={`px-5 py-2.5 rounded-full text-xs font-bold font-sans transition-all flex-shrink-0 border ${
+              selectedSubs.length === 0
+                ? 'bg-[#3B2A20] text-white border-[#3B2A20] shadow-xs'
+                : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400'
+            }`}
+          >
+            Everything
+          </button>
+          {availableSubcategories.map((sub) => {
+            const isSelected = selectedSubs.includes(sub);
+            return (
+              <button
+                key={sub}
+                onClick={() => toggleSubcategory(sub)}
+                className={`px-5 py-2.5 rounded-full text-xs font-bold font-sans transition-all flex-shrink-0 border ${
+                  isSelected
+                    ? 'bg-[#3B2A20] text-white border-[#3B2A20] shadow-xs'
+                    : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400'
+                }`}
+              >
+                {sub}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Main Layout */}
       <div className="flex flex-col lg:flex-row gap-8 items-start">
