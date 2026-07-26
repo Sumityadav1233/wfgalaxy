@@ -1,0 +1,308 @@
+'use client';
+
+import React, { useState, useMemo } from 'react';
+import OrderNowModal from './OrderNowModal';
+import { useCart } from '@/context/CartContext';
+import { ShoppingBag, ChevronDown, ChevronUp, Check, Play, Truck, ShieldCheck, RefreshCw } from 'lucide-react';
+
+interface ProductDetailClientProps {
+  product: any;
+}
+
+function parseImages(product: any): string[] {
+  const defaultFallback = ['https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=600&auto=format&fit=crop'];
+
+  if (Array.isArray(product.image_urls) && product.image_urls.length > 0) {
+    return product.image_urls;
+  }
+  if (typeof product.image_urls === 'string' && product.image_urls.trim().length > 0) {
+    return product.image_urls.split(',').map((s: string) => s.trim()).filter(Boolean);
+  }
+
+  if (Array.isArray(product.images) && product.images.length > 0) {
+    return product.images;
+  }
+  if (typeof product.images === 'string' && product.images.trim().length > 0) {
+    return product.images.split(',').map((s: string) => s.trim()).filter(Boolean);
+  }
+
+  return defaultFallback;
+}
+
+function parseArrayField(field: any, defaults: string[] = []): string[] {
+  if (!field) return defaults;
+  if (Array.isArray(field)) return field.map(s => String(s).trim()).filter(Boolean);
+  if (typeof field === 'string' && field.trim().length > 0) {
+    return field.split(',').map(s => s.trim()).filter(Boolean);
+  }
+  return defaults;
+}
+
+export default function ProductDetailClient({ product }: ProductDetailClientProps) {
+  const images = useMemo(() => parseImages(product), [product]);
+  const sizes = useMemo(() => parseArrayField(product.sizes, ['S', 'M', 'L', 'XL']), [product]);
+  const colors = useMemo(() => parseArrayField(product.colors, []), [product]);
+
+  const [selectedImage, setSelectedImage] = useState<string>(images[0] || '');
+  const [selectedSize, setSelectedSize] = useState<string>(sizes[0] || '');
+  const [selectedColor, setSelectedColor] = useState<string>(colors[0] || '');
+
+  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+  const [addedToCartSuccess, setAddedToCartSuccess] = useState(false);
+  
+  // Accordion open states
+  const [activeTab, setActiveTab] = useState<string | null>('details');
+
+  const { addToCart } = useCart();
+
+  const handleAddToCart = () => {
+    if (sizes.length > 0 && !selectedSize) {
+      alert('Please select a size first.');
+      return;
+    }
+
+    addToCart({
+      id: product.id,
+      name: product.name,
+      price: Number(product.price) || 0,
+      image: selectedImage || images[0],
+      size: selectedSize || 'Free',
+      color: selectedColor || (colors[0] || 'Default'),
+    });
+
+    setAddedToCartSuccess(true);
+    setTimeout(() => setAddedToCartSuccess(false), 2500);
+  };
+
+  const handleOrderClick = () => {
+    if (sizes.length > 0 && !selectedSize) {
+      alert('Please select a size before placing an order.');
+      return;
+    }
+    setIsOrderModalOpen(true);
+  };
+
+  const toggleAccordion = (tab: string) => {
+    setActiveTab(prev => prev === tab ? null : tab);
+  };
+
+  const videoUrl = product.videoUrl || product.video_url;
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start">
+      {/* Left Column: Image & Video Gallery (7 cols) */}
+      <div className="lg:col-span-7 flex flex-col-reverse md:flex-row gap-4">
+        {/* Thumbnails list */}
+        {images.length > 1 && (
+          <div className="flex md:flex-col gap-3 overflow-x-auto md:overflow-y-auto max-h-[600px] no-scrollbar py-1">
+            {images.map((img: string, idx: number) => (
+              <button
+                key={idx}
+                onClick={() => setSelectedImage(img)}
+                className={`flex-shrink-0 w-20 h-24 md:w-22 md:h-28 bg-gray-100 rounded-xl overflow-hidden transition-all border-2 ${
+                  selectedImage === img ? 'border-[#3B2A20] shadow-md scale-105' : 'border-transparent opacity-70 hover:opacity-100'
+                }`}
+              >
+                <img src={img} alt={`${product.name} thumbnail ${idx + 1}`} className="w-full h-full object-cover" />
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Main Image View */}
+        <div className="flex-1 bg-gray-100 rounded-2xl overflow-hidden aspect-3/4 relative group shadow-sm border border-gray-100">
+          <img 
+            src={selectedImage || images[0]} 
+            alt={product.name} 
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
+          />
+
+          {product.is_latest && (
+            <span className="absolute top-4 left-4 bg-[#3B2A20] text-white text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wider shadow-md">
+              New Arrival
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Right Column: Details & Purchasing Actions (5 cols) */}
+      <div className="lg:col-span-5 flex flex-col space-y-6">
+        <div>
+          <span className="text-xs font-bold text-[#F5820B] uppercase tracking-widest block mb-2">
+            {product.category || 'WF GALAXY Collection'}
+          </span>
+          <h1 className="text-3xl md:text-4xl font-serif font-bold text-[#3B2A20] mb-3 leading-tight">
+            {product.name}
+          </h1>
+          <div className="flex items-center space-x-3 mb-4">
+            <span className="text-2xl font-bold text-[#3B2A20]">
+              Rs. {Number(product.price || 0).toLocaleString()}
+            </span>
+            <span className="text-xs text-green-600 bg-green-50 px-2.5 py-1 rounded-full font-bold">
+              In Stock
+            </span>
+          </div>
+          <p className="text-sm text-gray-600 leading-relaxed">
+            {product.description || "A premium everyday essential. Handcrafted with precision and the finest materials for maximum comfort and style."}
+          </p>
+        </div>
+
+        {/* Colors Selector */}
+        {colors.length > 0 && (
+          <div>
+            <h3 className="text-xs font-bold text-[#3B2A20] uppercase tracking-wider mb-3">
+              Color: <span className="font-semibold text-gray-600">{selectedColor}</span>
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {colors.map((color: string) => (
+                <button
+                  key={color}
+                  onClick={() => setSelectedColor(color)}
+                  className={`px-4 py-2 rounded-full text-xs font-bold border transition-all ${
+                    selectedColor === color
+                      ? 'border-[#3B2A20] bg-[#3B2A20] text-white shadow-xs'
+                      : 'border-gray-200 bg-white text-gray-700 hover:border-[#F5820B]'
+                  }`}
+                >
+                  {color}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Sizes Selector */}
+        {sizes.length > 0 && (
+          <div>
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="text-xs font-bold text-[#3B2A20] uppercase tracking-wider">
+                Select Size: <span className="font-semibold text-[#F5820B]">{selectedSize}</span>
+              </h3>
+              <button className="text-xs text-gray-500 underline hover:text-[#F5820B]">Size Guide</button>
+            </div>
+            <div className="flex flex-wrap gap-2.5">
+              {sizes.map((size: string) => (
+                <button
+                  key={size}
+                  onClick={() => setSelectedSize(size)}
+                  className={`w-12 h-12 rounded-xl flex items-center justify-center text-sm font-bold border transition-all ${
+                    selectedSize === size 
+                      ? 'border-[#3B2A20] bg-[#3B2A20] text-white shadow-sm scale-105' 
+                      : 'border-gray-200 bg-white text-gray-700 hover:border-[#3B2A20]'
+                  }`}
+                >
+                  {size}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Promo Video Player Section */}
+        {videoUrl && (
+          <div className="p-4 bg-amber-50/60 border border-amber-200/60 rounded-2xl">
+            <div className="flex items-center space-x-2 text-[#3B2A20] font-bold text-xs uppercase tracking-wider mb-2">
+              <Play className="w-4 h-4 text-[#F5820B] fill-[#F5820B]" />
+              <span>Product Showcase Video</span>
+            </div>
+            <video 
+              src={videoUrl} 
+              controls 
+              className="w-full rounded-xl max-h-56 object-cover bg-black"
+            />
+          </div>
+        )}
+
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row gap-3 pt-2">
+          <button
+            onClick={handleAddToCart}
+            className={`flex-1 flex items-center justify-center py-4 rounded-xl font-bold text-sm uppercase tracking-wider transition-all duration-300 border-2 ${
+              addedToCartSuccess
+                ? 'bg-green-600 border-green-600 text-white'
+                : 'border-[#3B2A20] text-[#3B2A20] hover:bg-[#3B2A20] hover:text-white'
+            }`}
+          >
+            {addedToCartSuccess ? (
+              <span className="flex items-center"><Check className="w-4 h-4 mr-2" /> Added to Cart</span>
+            ) : (
+              <span className="flex items-center"><ShoppingBag className="w-4 h-4 mr-2" /> Add to Cart</span>
+            )}
+          </button>
+
+          <button
+            onClick={handleOrderClick}
+            className="flex-1 bg-[#3B2A20] text-white py-4 rounded-xl font-bold text-sm uppercase tracking-wider hover:bg-[#F5820B] transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5 duration-200"
+          >
+            Order Now
+          </button>
+        </div>
+
+        {/* Highlights */}
+        <div className="grid grid-cols-3 gap-3 pt-4 border-t border-gray-100 text-center">
+          <div className="p-3 bg-gray-50 rounded-xl flex flex-col items-center">
+            <Truck className="w-5 h-5 text-[#F5820B] mb-1" />
+            <span className="text-[11px] font-bold text-gray-700">Fast Shipping</span>
+          </div>
+          <div className="p-3 bg-gray-50 rounded-xl flex flex-col items-center">
+            <ShieldCheck className="w-5 h-5 text-[#F5820B] mb-1" />
+            <span className="text-[11px] font-bold text-gray-700">100% Authentic</span>
+          </div>
+          <div className="p-3 bg-gray-50 rounded-xl flex flex-col items-center">
+            <RefreshCw className="w-5 h-5 text-[#F5820B] mb-1" />
+            <span className="text-[11px] font-bold text-gray-700">Easy Returns</span>
+          </div>
+        </div>
+
+        {/* Interactive Accordion Sections */}
+        <div className="border-t border-gray-200 pt-4 space-y-3">
+          {/* Details */}
+          <div className="border border-gray-100 rounded-xl overflow-hidden">
+            <button
+              onClick={() => toggleAccordion('details')}
+              className="w-full flex justify-between items-center p-4 bg-gray-50/50 hover:bg-gray-50 text-left font-bold text-[#3B2A20] text-sm"
+            >
+              <span>Product Specifications</span>
+              {activeTab === 'details' ? <ChevronUp className="w-4 h-4 text-[#F5820B]" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+            </button>
+            {activeTab === 'details' && (
+              <div className="p-4 text-xs text-gray-600 leading-relaxed border-t border-gray-100 space-y-2 bg-white">
+                <p><strong>Category:</strong> {product.category || 'General'}</p>
+                {product.subcategory && <p><strong>Subcategory:</strong> {product.subcategory}</p>}
+                <p><strong>Materials:</strong> Premium Cotton Blend & Handcrafted Finish</p>
+                <p><strong>Care:</strong> Machine wash cold inside out, hang dry.</p>
+              </div>
+            )}
+          </div>
+
+          {/* Shipping & Delivery */}
+          <div className="border border-gray-100 rounded-xl overflow-hidden">
+            <button
+              onClick={() => toggleAccordion('shipping')}
+              className="w-full flex justify-between items-center p-4 bg-gray-50/50 hover:bg-gray-50 text-left font-bold text-[#3B2A20] text-sm"
+            >
+              <span>Shipping & Delivery</span>
+              {activeTab === 'shipping' ? <ChevronUp className="w-4 h-4 text-[#F5820B]" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+            </button>
+            {activeTab === 'shipping' && (
+              <div className="p-4 text-xs text-gray-600 leading-relaxed border-t border-gray-100 bg-white">
+                <p>We deliver directly to your doorstep across Nepal. Same-day delivery available within Janakpur city limits. Standard delivery takes 2-4 business days.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {isOrderModalOpen && (
+        <OrderNowModal 
+          product={{
+            ...product,
+            image_urls: images,
+          }} 
+          selectedSize={selectedSize} 
+          onClose={() => setIsOrderModalOpen(false)} 
+        />
+      )}
+    </div>
+  );
+}

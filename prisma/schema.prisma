@@ -1,0 +1,84 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  name        String
+  description String
+  price       Float
+  category    String
+  sizes       String   // Comma-separated string, e.g. "S,M,L,XL"
+  colors      String   // Comma-separated string, e.g. "Black,White,Emerald"
+  images      String   // Comma-separated string or JSON array of image paths/URLs
+  videoUrl    String?  // URL/path to the raw product video
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  videos      ProductVideo[]
+  posts       SocialPost[]
+}
+
+model ProductVideo {
+  id            String   @id @default(uuid())
+  rawUrl        String
+  verticalUrl   String?  // Generated 9:16 crop
+  squareUrl     String?  // Generated 1:1 crop
+  horizontalUrl String?  // Generated 16:9 crop
+  productId     String
+  product       Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  posts         SocialPost[]
+  createdAt     DateTime @default(now())
+}
+
+model SocialAccount {
+  id               String   @id @default(uuid())
+  platform         String   // "youtube", "tiktok", "instagram", "facebook"
+  connectionStatus String   // "connected", "disconnected"
+  accountName      String
+  accessToken      String?  // Saved OAuth access token
+  refreshToken     String?  // Saved OAuth refresh token
+  expiresAt        DateTime? // Token expiry timestamp
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model SocialPost {
+  id              String        @id @default(uuid())
+  caption         String
+  targetPlatforms String        // JSON array of platforms, e.g. ["youtube", "tiktok"]
+  status          String        // JSON object string, e.g. {"youtube":"posted", "tiktok":"failed"}
+  links           String?       // JSON object string, e.g. {"youtube":"https://youtube.com/...", "tiktok":""}
+  videoId         String?
+  video           ProductVideo? @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  productId       String?
+  product         Product?      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt       DateTime      @default(now())
+}
+
+model Order {
+  id              String   @id @default(uuid())
+  customerName    String
+  customerPhone   String
+  customerAddress String
+  items           String   // JSON string of items: [{"productId": "...", "name": "...", "quantity": 1, "price": 49.99, "size": "M", "color": "Black"}]
+  totalAmount     Float
+  status          String   // "PENDING", "PAID", "SHIPPED", "DELIVERED"
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model ChatMessage {
+  id        String   @id @default(uuid())
+  sessionId String
+  role      String   // "user", "assistant"
+  text      String
+  createdAt DateTime @default(now())
+}
