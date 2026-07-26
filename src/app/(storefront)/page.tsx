@@ -31,21 +31,57 @@ export default async function HomePage() {
 
   return (
     <div className="flex flex-col">
-      {/* Hero Section */}
-      <section className="relative h-[90vh] min-h-[600px] flex items-center bg-[#F3F1EC] pt-20">
-        <div className="absolute inset-0 z-0">
+      {/* Redesigned Hero Section */}
+      <section className="relative min-h-[85vh] md:h-[90vh] md:min-h-[600px] flex items-center bg-[#FAF9F6] pt-24 md:pt-20">
+        {/* Desktop Only Background Image */}
+        <div className="hidden md:block absolute inset-0 z-0">
           <img 
             src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=2070&auto=format&fit=crop" 
             alt="Hero Fashion" 
             className="w-full h-full object-cover opacity-80"
           />
         </div>
+
         <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10 w-full flex flex-col md:flex-row items-center justify-between">
-          <div className="md:w-1/2 space-y-8 glassmorphism p-8 md:p-12 rounded-3xl animate-slide-up">
+          
+          {/* Mobile Clean Hero Layout (App-like & Clutter-Free) */}
+          <div className="w-full md:hidden flex flex-col items-center text-center py-6">
+            {/* Brand Logo */}
+            <img src="/logo.png" alt="WF GALAXY Logo" className="h-20 w-auto object-contain mb-6" />
+
+            {/* Short Punchy 3-Word Headline */}
+            <h1 className="font-serif text-4xl font-bold text-[#3B2A20] tracking-tight leading-tight mb-6">
+              Style That Speaks.
+            </h1>
+
+            {/* Single Large Contrast CTA Button */}
+            <Link 
+              href="/shop" 
+              className="bg-[#3B2A20] text-white px-10 py-4 rounded-full font-bold text-sm uppercase tracking-widest hover:bg-[#F5820B] transition-all shadow-lg active:scale-95 mb-8"
+            >
+              Shop Now
+            </Link>
+
+            {/* Clean Feature Image Below Button */}
+            <Link href="/shop" className="w-full max-w-xs rounded-3xl overflow-hidden shadow-xl border border-gray-100 aspect-[4/5] relative group block">
+              <img 
+                src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=800&auto=format&fit=crop" 
+                alt="New Arrival" 
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              />
+              <div className="absolute bottom-3 left-3 right-3 bg-white/90 backdrop-blur-md p-3.5 rounded-2xl flex justify-between items-center shadow-xs">
+                <span className="font-serif text-xs font-bold text-[#3B2A20]">New Collection 2026</span>
+                <span className="text-xs font-bold text-[#F5820B]">Explore &rarr;</span>
+              </div>
+            </Link>
+          </div>
+
+          {/* Desktop Rich Glassmorphism Layout */}
+          <div className="hidden md:flex md:w-1/2 flex-col space-y-8 glassmorphism p-12 rounded-3xl animate-slide-up">
             <div className="mb-2">
-              <img src="/logo.png" alt="WF GALAXY Logo" className="h-24 md:h-32 w-auto object-contain" />
+              <img src="/logo.png" alt="WF GALAXY Logo" className="h-32 w-auto object-contain" />
             </div>
-            <h1 className="font-serif text-5xl md:text-7xl font-bold text-[#3B2A20] leading-tight">
+            <h1 className="font-serif text-6xl lg:text-7xl font-bold text-[#3B2A20] leading-tight">
               Carry style with confidence,<br /> everyday essential
             </h1>
             <p className="text-lg text-gray-600 max-w-md">
@@ -64,7 +100,8 @@ export default async function HomePage() {
             </div>
           </div>
 
-          <div className="md:w-1/3 hidden md:flex flex-col space-y-6 animate-slide-in-right mt-12 md:mt-0">
+          {/* Desktop Right Card */}
+          <div className="hidden md:flex md:w-1/3 flex-col space-y-6 animate-slide-in-right mt-12 md:mt-0">
             <div className="bg-white p-4 rounded-2xl shadow-xl transform rotate-3 hover:rotate-0 transition-transform duration-500 cursor-pointer w-64 self-end">
               <img src="https://images.unsplash.com/photo-1576566588028-4147f3842f27?q=80&w=800&auto=format&fit=crop" alt="New Addition" className="w-full aspect-[4/5] object-cover rounded-xl mb-4" />
               <div className="flex justify-between items-center">
@@ -73,6 +110,7 @@ export default async function HomePage() {
               </div>
             </div>
           </div>
+
         </div>
       </section>
 
