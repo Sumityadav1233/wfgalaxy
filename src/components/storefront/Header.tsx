@@ -215,23 +215,6 @@ export default function Header() {
               </div>
             </div>
 
-            {/* Drawer Footer Account Buttons */}
-            <div className="pt-6 border-t border-gray-100 space-y-3">
-              <Link 
-                href="/admin/login" 
-                className="w-full flex items-center justify-center text-sm font-bold text-[#3B2A20] py-2.5 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors"
-                onClick={() => setIsMobileDrawerOpen(false)}
-              >
-                Log In
-              </Link>
-              <Link 
-                href="/admin/login" 
-                className="w-full flex items-center justify-center text-sm font-bold text-white bg-[#3B2A20] py-2.5 rounded-xl hover:bg-[#F5820B] transition-colors shadow-xs"
-                onClick={() => setIsMobileDrawerOpen(false)}
-              >
-                Sign Up
-              </Link>
-            </div>
           </div>
         </div>
       )}
