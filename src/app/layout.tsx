@@ -13,6 +13,7 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://wfgalaxy.vercel.app'),
   title: "WF GALAXY | Premium Fashion & Outerwear",
   description: "Carry style with confidence. Discover elevated essentials and luxury outerwear at WF GALAXY, Shiv Chowk, Janakpur.",
 };

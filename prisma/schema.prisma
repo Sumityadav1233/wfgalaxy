@@ -15,6 +15,7 @@ model Product {
   description String
   price       Float
   category    String
+  subcategory String?
   sizes       String   // Comma-separated string, e.g. "S,M,L,XL"
   colors      String   // Comma-separated string, e.g. "Black,White,Emerald"
   images      String   // Comma-separated string or JSON array of image paths/URLs
