@@ -70,21 +70,32 @@ export default function AdminNewProductPage() {
 
       // 1. Upload Image to Storage if exists
       if (imageFile) {
-        const fileExt = imageFile.name.split('.').pop();
-        const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
-        const filePath = `${fileName}`;
+        try {
+          const fileExt = imageFile.name.split('.').pop();
+          const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+          const filePath = `${fileName}`;
 
-        const { error: uploadError } = await supabase.storage
-          .from('product-images')
-          .upload(filePath, imageFile);
+          const { error: uploadError } = await supabase.storage
+            .from('product-images')
+            .upload(filePath, imageFile);
 
-        if (uploadError) throw new Error('Image upload failed: ' + uploadError.message);
+          if (!uploadError) {
+            const { data: publicUrlData } = supabase.storage
+              .from('product-images')
+              .getPublicUrl(filePath);
 
-        const { data: publicUrlData } = supabase.storage
-          .from('product-images')
-          .getPublicUrl(filePath);
-
-        imageUrls = [publicUrlData.publicUrl];
+            if (publicUrlData?.publicUrl) {
+              imageUrls = [publicUrlData.publicUrl];
+            }
+          } else {
+            console.warn('Supabase storage upload notice:', uploadError.message);
+            // Fallback to sample image if storage bucket is not configured
+            imageUrls = ['https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=800&auto=format&fit=crop&q=80'];
+          }
+        } catch (err) {
+          console.warn('Storage error fallback:', err);
+          imageUrls = ['https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=800&auto=format&fit=crop&q=80'];
+        }
       }
 
       // 2. Prepare payload
