@@ -115,6 +115,9 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
             src={selectedImage || images[0]} 
             alt={product.name} 
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=600&auto=format&fit=crop';
+            }}
           />
 
           {product.is_latest && (
