@@ -32,7 +32,7 @@ export default async function HomePage() {
   return (
     <div className="flex flex-col">
       {/* Redesigned Hero Section */}
-      <section className="relative min-h-[85vh] md:h-[90vh] md:min-h-[600px] flex items-center bg-[#FAF9F6] pt-24 md:pt-20">
+      <section className="relative bg-[#FAF9F6] pt-24 pb-8 md:py-20 md:h-[90vh] md:min-h-[600px] flex items-center">
         {/* Desktop Only Background Image */}
         <div className="hidden md:block absolute inset-0 z-0">
           <img 
@@ -44,22 +44,26 @@ export default async function HomePage() {
 
         <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10 w-full flex flex-col md:flex-row items-center justify-between">
           
-          {/* Mobile Clean Hero Layout (Instagram Video & Brand Logo) */}
-          <div className="w-full md:hidden flex flex-col items-center text-center py-4">
+          {/* Mobile Clean Hero Layout (Rearranged & Proportioned Reel Video Card) */}
+          <div className="w-full md:hidden flex flex-col items-center text-center">
             {/* Brand Logo */}
             <img src="/logo.png" alt="WF GALAXY Logo" className="h-16 w-auto object-contain mb-4" />
 
-            {/* Auto-playing Repeating Reel Video Container (Square/Rectangular Crop Shape) */}
-            <div className="w-full max-w-xs rounded-3xl overflow-hidden shadow-2xl border border-gray-200 aspect-square relative bg-black flex items-center justify-center my-2">
+            {/* Perfectly Rearranged Auto-playing Reel Video Card */}
+            <Link href="/men" className="w-full max-w-[330px] aspect-[4/5] rounded-3xl overflow-hidden shadow-2xl border border-gray-200 relative group block my-1 bg-black">
               <video 
                 src="/hero-video.mp4" 
                 autoPlay 
                 loop 
                 muted 
                 playsInline 
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
-            </div>
+              <div className="absolute bottom-3 left-3 right-3 bg-white/90 backdrop-blur-md p-3.5 rounded-2xl flex justify-between items-center shadow-sm">
+                <span className="font-serif text-xs font-bold text-[#3B2A20]">Men's Collection 2026</span>
+                <span className="text-xs font-bold text-[#F5820B]">Explore &rarr;</span>
+              </div>
+            </Link>
           </div>
 
           {/* Desktop Rich Glassmorphism Layout */}
