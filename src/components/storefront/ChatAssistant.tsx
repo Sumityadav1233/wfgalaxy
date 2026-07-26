@@ -219,10 +219,10 @@ export const ChatAssistant: React.FC = () => {
         </div>
       )}
 
-      {/* Floating Chat Button */}
+      {/* Floating Chat Button (Desktop Only - Mobile uses BottomNav Chat) */}
       <button
         onClick={toggleChat}
-        className={`h-14 w-14 rounded-full bg-primary hover:bg-neutral-800 text-accent flex items-center justify-center shadow-2xl transition-all active:scale-95 duration-200 border border-neutral-800 focus:outline-hidden glow-btn ${
+        className={`hidden md:flex h-14 w-14 rounded-full bg-primary hover:bg-neutral-800 text-accent items-center justify-center shadow-2xl transition-all active:scale-95 duration-200 border border-neutral-800 focus:outline-hidden glow-btn ${
           hasNewMessage ? 'animate-bounce' : ''
         }`}
         aria-label="Open AI Assistant"

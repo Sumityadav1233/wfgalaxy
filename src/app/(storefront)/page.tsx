@@ -62,15 +62,15 @@ export default async function HomePage() {
               Shop Now
             </Link>
 
-            {/* Clean Feature Image Below Button */}
-            <Link href="/shop" className="w-full max-w-xs rounded-3xl overflow-hidden shadow-xl border border-gray-100 aspect-[4/5] relative group block">
+            {/* Clean Feature Image Below Button (Stylish Men's Collection Banner) */}
+            <Link href="/men" className="w-full max-w-xs rounded-3xl overflow-hidden shadow-xl border border-gray-100 aspect-[4/5] relative group block">
               <img 
-                src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=800&auto=format&fit=crop" 
-                alt="New Arrival" 
+                src="https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?q=80&w=800&auto=format&fit=crop" 
+                alt="Stylish Men's Collection" 
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
               <div className="absolute bottom-3 left-3 right-3 bg-white/90 backdrop-blur-md p-3.5 rounded-2xl flex justify-between items-center shadow-xs">
-                <span className="font-serif text-xs font-bold text-[#3B2A20]">New Collection 2026</span>
+                <span className="font-serif text-xs font-bold text-[#3B2A20]">Men's Collection 2026</span>
                 <span className="text-xs font-bold text-[#F5820B]">Explore &rarr;</span>
               </div>
             </Link>
