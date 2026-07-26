@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import CategoryClient from '../../[category]/CategoryClient';
 
-export const revalidate = 0;
+export const revalidate = 60; // 60s ISR caching for lightning fast CDN responses
 
 export default async function MenSubcategoryPage({ params }: { params: Promise<{ subcategory: string }> }) {
   const resolvedParams = await params;

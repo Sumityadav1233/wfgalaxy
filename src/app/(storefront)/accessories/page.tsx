@@ -2,7 +2,7 @@ import React from 'react';
 import CategoryClient from '../[category]/CategoryClient';
 import { createClient } from '@/lib/supabase/server';
 
-export const revalidate = 0;
+export const revalidate = 60; // 60s ISR caching for lightning fast CDN responses
 
 export default async function AccessoriesPage() {
   const supabase = await createClient();

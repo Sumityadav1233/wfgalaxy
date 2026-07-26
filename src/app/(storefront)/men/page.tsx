@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import CategoryClient from '../[category]/CategoryClient';
 
-export const revalidate = 0; // Don't cache heavily so new categories show up immediately
+export const revalidate = 60; // 60s ISR caching for lightning fast CDN responses
 
 export default async function MenCategoryPage() {
   const supabase = await createClient();

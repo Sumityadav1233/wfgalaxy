@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
 import CategoryClient from './CategoryClient';
 
-export const revalidate = 0; // Don't aggressively cache to show updates instantly
+export const revalidate = 60; // 60s ISR caching for lightning fast CDN responses
 
 export default async function CategoryPage({ params }: { params: Promise<{ category: string }> }) {
   const resolvedParams = await params;

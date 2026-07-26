@@ -4,7 +4,7 @@ import prisma from '@/lib/db';
 import { notFound } from 'next/navigation';
 import ProductDetailClient from '@/components/storefront/ProductDetailClient';
 
-export const revalidate = 0;
+export const revalidate = 60; // 60s ISR caching for lightning fast CDN responses
 
 export default async function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
