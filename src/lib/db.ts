@@ -3,9 +3,14 @@ import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
 import path from 'path';
 
 const prismaClientSingleton = () => {
-  const dbPath = path.resolve(process.cwd(), 'dev.db');
-  const adapter = new PrismaBetterSqlite3({ url: `file:${dbPath}` });
-  return new PrismaClient({ adapter });
+  try {
+    const dbPath = path.resolve(process.cwd(), 'dev.db');
+    const adapter = new PrismaBetterSqlite3({ url: `file:${dbPath}` });
+    return new PrismaClient({ adapter });
+  } catch (err) {
+    console.error('Prisma initialization warning:', err);
+    return new PrismaClient();
+  }
 };
 
 declare global {
