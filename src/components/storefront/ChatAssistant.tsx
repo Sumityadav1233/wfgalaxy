@@ -30,6 +30,16 @@ export const ChatAssistant: React.FC = () => {
     setSessionId(savedId);
   }, []);
 
+  // Listen for open event from Mobile BottomNav
+  useEffect(() => {
+    const handleOpenChat = () => {
+      setIsOpen(true);
+      setHasNewMessage(false);
+    };
+    window.addEventListener('open-chat-assistant', handleOpenChat);
+    return () => window.removeEventListener('open-chat-assistant', handleOpenChat);
+  }, []);
+
   // Fetch chat history once session ID is ready
   useEffect(() => {
     if (!sessionId) return;
@@ -133,7 +143,7 @@ export const ChatAssistant: React.FC = () => {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end">
+    <div className="fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-40 flex flex-col items-end">
       {/* Chat Window */}
       {isOpen && (
         <div className="mb-4 w-[350px] sm:w-[380px] h-[500px] rounded-lg border border-border bg-background shadow-2xl flex flex-col overflow-hidden animate-slide-up">
