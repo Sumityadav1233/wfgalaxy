@@ -53,10 +53,10 @@ export default async function HomePage() {
                 loop 
                 muted 
                 playsInline 
-                className="w-full h-full object-cover scale-[1.06] transition-transform duration-500 group-hover:scale-110"
-                style={{ objectFit: 'cover', width: '100%', height: '100%' }}
+                className="absolute inset-0 w-full h-full object-cover object-center"
+                style={{ objectFit: 'cover', objectPosition: 'center', width: '100%', height: '100%' }}
               />
-              <div className="absolute bottom-3 left-3 right-3 bg-white/90 backdrop-blur-md p-3.5 rounded-2xl flex justify-between items-center shadow-sm">
+              <div className="absolute bottom-3 left-3 right-3 bg-white/90 backdrop-blur-md p-3.5 rounded-2xl flex justify-between items-center shadow-sm z-10">
                 <span className="font-serif text-xs font-bold text-[#3B2A20]">Men's Collection 2026</span>
                 <span className="text-xs font-bold text-[#F5820B]">Explore &rarr;</span>
               </div>
