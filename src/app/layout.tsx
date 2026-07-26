@@ -5,11 +5,15 @@ import "./globals.css";
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
+  fallback: ["sans-serif", "system-ui", "arial"],
+  display: "swap",
 });
 
 const playfair = Playfair_Display({
   variable: "--font-playfair",
   subsets: ["latin"],
+  fallback: ["serif", "Georgia", "Times New Roman"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {

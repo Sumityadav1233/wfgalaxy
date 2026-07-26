@@ -44,20 +44,20 @@ export default async function HomePage() {
 
         <div className="max-w-7xl mx-auto px-6 lg:px-8 relative z-10 w-full flex flex-col md:flex-row items-center justify-between">
           
-          {/* Mobile Clean Hero Layout (Instagram Video Reel & Brand Logo) */}
+          {/* Mobile Clean Hero Layout (Instagram Video & Brand Logo) */}
           <div className="w-full md:hidden flex flex-col items-center text-center py-4">
             {/* Brand Logo */}
             <img src="/logo.png" alt="WF GALAXY Logo" className="h-16 w-auto object-contain mb-4" />
 
-            {/* Instagram Reel Video Player Container (Square/Rectangular Crop Shape) */}
+            {/* Auto-playing Repeating Reel Video Container (Square/Rectangular Crop Shape) */}
             <div className="w-full max-w-xs rounded-3xl overflow-hidden shadow-2xl border border-gray-200 aspect-square relative bg-black flex items-center justify-center my-2">
-              <iframe 
-                src="https://www.instagram.com/reel/DUKEUfskp-7/embed" 
-                className="w-full h-[125%] -mt-[12%] border-0" 
-                allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
-                allowFullScreen 
-                scrolling="no" 
-                title="WF GALAXY Instagram Reel"
+              <video 
+                src="/hero-video.mp4" 
+                autoPlay 
+                loop 
+                muted 
+                playsInline 
+                className="w-full h-full object-cover"
               />
             </div>
           </div>
