@@ -53,7 +53,8 @@ export default async function HomePage() {
                 loop 
                 muted 
                 playsInline 
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                className="w-full h-full object-cover scale-[1.06] transition-transform duration-500 group-hover:scale-110"
+                style={{ objectFit: 'cover', width: '100%', height: '100%' }}
               />
               <div className="absolute bottom-3 left-3 right-3 bg-white/90 backdrop-blur-md p-3.5 rounded-2xl flex justify-between items-center shadow-sm">
                 <span className="font-serif text-xs font-bold text-[#3B2A20]">Men's Collection 2026</span>
