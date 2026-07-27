@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import "./globals.css";
 
 const inter = Inter({
@@ -31,6 +32,7 @@ export default function RootLayout({
     <html lang="en" className="h-full">
       <body className={`${inter.variable} ${playfair.variable} min-h-full flex flex-col font-sans antialiased`}>
         {children}
+        <SpeedInsights />
       </body>
     </html>
   );
