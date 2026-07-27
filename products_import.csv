@@ -1,0 +1,7 @@
+name,description,price,category,sizes,colors,images,stock_quantity,low_stock_threshold,is_out_of_stock
+"Autumn Oversized Trench Coat","A premium double-breasted trench coat tailored from mid-weight cotton-gabardine.",129.99,"Outerwear","S,M,L,XL,XXXL","Camel,Black,Khaki","https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=800&auto=format&fit=crop&q=80",15,10,false
+"Signature Raw Denim Jacket","Crafted from 100% organic Japanese raw denim with double-stitched durability.",89.99,"Outerwear","S,M,L,XL,XXL,4XL","Indigo,Classic Blue",5,10,false
+"Classic Linen Button-Down","Woven from breathable French flax linen, pre-washed for extra softness.",59.99,"Shirts","M,L,XL,XXXL,4XL,5XL","Off-White,Olive,Light Blue",25,10,false
+"WF Galaxy Cozy Cotton Hoodie","An ultra-soft fleece hoodie spun from premium long-staple cotton.",69.99,"Activewear","S,M,L,XL,4XL,5XL","Ash Grey,Charcoal,Sand Gold",0,10,true
+"Tailored Wide-Leg Trousers","High-waisted trousers with double front pleats and a relaxed wide-leg cut.",79.99,"Pants","XS,S,M,L,XL","Taupe,Dark Charcoal,Cream",30,10,false
+"Minimalist Silk Slip Dress","Cut on the bias from luxurious mulberry silk, creating a fluid silhouette.",110.00,"Dresses","XS,S,M,L,XXL","Emerald Green,Champagne,Midnight Black",12,10,false

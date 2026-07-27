@@ -46,14 +46,34 @@ export async function updateSession(request: NextRequest) {
         return NextResponse.redirect(url)
       }
 
-      // Query admins table for authorization
-      const { data: adminRecord } = await supabase
+      // Check 1: Check admin table (singular)
+      const { data: adminRecordSingular } = await supabase
+        .from('admin')
+        .select('email')
+        .eq('email', user.email)
+        .maybeSingle()
+
+      // Check 2: Check admins table (plural)
+      const { data: adminRecordPlural } = await supabase
         .from('admins')
         .select('email')
         .eq('email', user.email)
-        .single()
+        .maybeSingle()
 
-      if (!adminRecord) {
+      // Check 3: Check profiles table (role = 'admin')
+      const { data: profileRecord } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('user_id', user.id)
+        .maybeSingle()
+
+      const isAdmin = Boolean(
+        adminRecordSingular ||
+        adminRecordPlural || 
+        (profileRecord && profileRecord.role === 'admin')
+      )
+
+      if (!isAdmin) {
         const url = request.nextUrl.clone()
         url.pathname = '/unauthorized'
         return NextResponse.redirect(url)

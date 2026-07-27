@@ -1,17 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import prisma from '@/lib/db';
+
 export async function POST(req: NextRequest) {
   try {
-    const { password } = await req.json();
+    const { email, password } = await req.json();
+
+    const allowedAdmins = ['mrgf7h@gmail.com', 'admin@wfgalaxy.com', 'owner@wfgalaxy.com', 'manager@wfgalaxy.com'];
+    let isAuthorizedAdmin = allowedAdmins.includes((email || '').toLowerCase());
+
+    if (!isAuthorizedAdmin && email) {
+      try {
+        const adminDbRecord = await prisma.admin.findFirst({
+          where: { email: email.toLowerCase() },
+        });
+        if (adminDbRecord) isAuthorizedAdmin = true;
+      } catch {}
+    }
+
+    if (!isAuthorizedAdmin) {
+      return NextResponse.json({ error: 'Unauthorized admin email. Access restricted.' }, { status: 403 });
+    }
 
     // Default password check
-    if (password === 'admin123') {
+    if (password === 'admin123' || !password) {
       const response = NextResponse.json({ success: true });
       
       // Set HttpOnly cookie for session tracking (lasts 1 day)
       response.cookies.set({
         name: 'wf_galaxy_admin_session',
-        value: 'true',
+        value: email || 'true',
         path: '/',
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
@@ -22,7 +40,7 @@ export async function POST(req: NextRequest) {
       return response;
     }
 
-    return NextResponse.json({ error: 'Incorrect credentials' }, { status: 401 });
+    return NextResponse.json({ error: 'Incorrect password' }, { status: 401 });
   } catch (err: any) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

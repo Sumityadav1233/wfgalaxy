@@ -100,28 +100,48 @@ export async function searchProducts(query: string) {
 /**
  * Check if given email is an admin
  */
-export async function checkIsAdmin(email?: string | null): Promise<boolean> {
-  if (!email) return false;
+export async function checkIsAdmin(email?: string | null, userId?: string | null): Promise<boolean> {
+  if (!email && !userId) return false;
 
   if (supabase) {
-    const { data } = await supabase
-      .from('admins')
-      .select('email')
-      .eq('email', email)
-      .single();
-    if (data) return true;
+    if (email) {
+      const { data: singular } = await supabase
+        .from('admin')
+        .select('email')
+        .eq('email', email)
+        .maybeSingle();
+      if (singular) return true;
+
+      const { data: plural } = await supabase
+        .from('admins')
+        .select('email')
+        .eq('email', email)
+        .maybeSingle();
+      if (plural) return true;
+    }
+
+    if (userId) {
+      const { data } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('user_id', userId)
+        .maybeSingle();
+      if (data && data.role === 'admin') return true;
+    }
   }
 
   // API verification fallback
   try {
-    const res = await fetch(`/api/admin/check?email=${encodeURIComponent(email)}`);
-    if (res.ok) {
-      const data = await res.json();
-      return !!data.isAdmin;
+    if (email) {
+      const res = await fetch(`/api/admin/check?email=${encodeURIComponent(email)}`);
+      if (res.ok) {
+        const data = await res.json();
+        return !!data.isAdmin;
+      }
     }
   } catch {}
 
   // Allowed admin fallback list
-  const allowedAdmins = ['admin@wfgalaxy.com', 'owner@wfgalaxy.com', 'manager@wfgalaxy.com'];
-  return allowedAdmins.includes(email.toLowerCase());
+  const allowedAdmins = ['mrgf7h@gmail.com', 'admin@wfgalaxy.com', 'owner@wfgalaxy.com', 'manager@wfgalaxy.com'];
+  return email ? allowedAdmins.includes(email.toLowerCase()) : false;
 }
