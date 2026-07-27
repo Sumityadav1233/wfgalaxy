@@ -14,6 +14,18 @@ async function main() {
   await prisma.productVideo.deleteMany({});
   await prisma.socialAccount.deleteMany({});
   await prisma.product.deleteMany({});
+  await prisma.admin.deleteMany({});
+
+  console.log('Seeding admins...');
+  const defaultAdmins = [
+    { email: 'admin@wfgalaxy.com' },
+    { email: 'owner@wfgalaxy.com' },
+    { email: 'manager@wfgalaxy.com' },
+  ];
+  for (const admin of defaultAdmins) {
+    await prisma.admin.create({ data: admin });
+  }
+  console.log('- Seeded 3 admin users.');
 
   console.log('Seeding products...');
 
@@ -27,56 +39,74 @@ async function main() {
       colors: 'Camel,Black,Khaki',
       images: 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=800&auto=format&fit=crop&q=80,https://images.unsplash.com/photo-1525507119028-ed4c629a60a3?w=800&auto=format&fit=crop&q=80',
       videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-woman-modeling-a-stylish-autumn-outfit-34406-large.mp4',
+      stock_quantity: 15,
+      low_stock_threshold: 10,
+      is_out_of_stock: false,
     },
     {
       name: 'Signature Raw Denim Jacket',
       description: 'Crafted from 100% organic Japanese raw denim. This classic trucker jacket is structured, double-stitched for durability, and will form unique distress marks over time. Finished with brand-engraved metal buttons.',
       price: 89.99,
       category: 'Outerwear',
-      sizes: 'S,M,L,XL,XXL',
+      sizes: 'S,M,L,XL,XXL,XXXL',
       colors: 'Indigo,Classic Blue,Faded Black',
       images: 'https://images.unsplash.com/photo-1576995853123-5a10305d93c0?w=800&auto=format&fit=crop&q=80,https://images.unsplash.com/photo-1516257984-b1b4d707412e?w=800&auto=format&fit=crop&q=80',
       videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-girl-in-neon-sign-posing-39843-large.mp4',
+      stock_quantity: 5,
+      low_stock_threshold: 10,
+      is_out_of_stock: false,
     },
     {
       name: 'Classic Linen Button-Down',
       description: 'Woven from breathable French flax linen, pre-washed for extra softness. This relaxed-fit shirt features a button-down collar, chest pocket, and curved hem. Keeps you cool and polished in warm climates.',
       price: 59.99,
       category: 'Shirts',
-      sizes: 'M,L,XL',
+      sizes: 'M,L,XL,XXXL,4XL',
       colors: 'Off-White,Olive,Light Blue',
       images: 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=800&auto=format&fit=crop&q=80,https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=800&auto=format&fit=crop&q=80',
       videoUrl: '',
+      stock_quantity: 25,
+      low_stock_threshold: 10,
+      is_out_of_stock: false,
     },
     {
       name: 'WF Galaxy Cozy Cotton Hoodie',
       description: 'An ultra-soft fleece hoodie spun from premium long-staple cotton and recycled polyester. Features a double-lined hood, heavy-duty drawstrings, and a spacious kangaroo pocket. Heavyweight fabric designed for ultimate comfort.',
       price: 69.99,
       category: 'Activewear',
-      sizes: 'S,M,L,XL',
+      sizes: 'S,M,L,XL,4XL,5XL',
       colors: 'Ash Grey,Charcoal,Sand Gold',
       images: 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=800&auto=format&fit=crop&q=80,https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?w=800&auto=format&fit=crop&q=80',
       videoUrl: '',
+      stock_quantity: 0,
+      low_stock_threshold: 10,
+      is_out_of_stock: true,
     },
     {
       name: 'Tailored Wide-Leg Trousers',
       description: 'High-waisted trousers with double front pleats and a relaxed wide-leg cut. Structured from a premium wool-viscose blend that drapes beautifully. Features hidden side pockets and a secure hook-and-bar closure.',
       price: 79.99,
       category: 'Pants',
-      sizes: 'XS,S,M,L',
+      sizes: 'XS,S,M,L,XL',
       colors: 'Taupe,Dark Charcoal,Cream',
       images: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=800&auto=format&fit=crop&q=80,https://images.unsplash.com/photo-1509551388413-e18d0ac5d495?w=800&auto=format&fit=crop&q=80',
       videoUrl: '',
+      stock_quantity: 30,
+      low_stock_threshold: 10,
+      is_out_of_stock: false,
     },
     {
       name: 'Minimalist Silk Slip Dress',
       description: 'Cut on the bias from luxurious mulberry silk, creating a fluid, body-skimming silhouette. Features a subtle cowl neckline, adjustable crossover spaghetti straps, and a side slit. An effortlessly elegant evening piece.',
       price: 110.00,
       category: 'Dresses',
-      sizes: 'XS,S,M,L',
+      sizes: 'XS,S,M,L,XXL',
       colors: 'Emerald Green,Champagne,Midnight Black',
       images: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=800&auto=format&fit=crop&q=80,https://images.unsplash.com/photo-1485230895905-ec40ba36b9bc?w=800&auto=format&fit=crop&q=80',
       videoUrl: '',
+      stock_quantity: 12,
+      low_stock_threshold: 10,
+      is_out_of_stock: false,
     }
   ];
 

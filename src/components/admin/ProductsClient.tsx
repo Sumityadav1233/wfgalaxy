@@ -1,7 +1,9 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { Plus, Edit, Trash2, Video, X, Sparkles, Upload, FileVideo, Image as ImageIcon, Check } from 'lucide-react';
+import StockManagement from './StockManagement';
+import ProductSearch from './ProductSearch';
 
 interface Product {
   id: string;
@@ -13,6 +15,9 @@ interface Product {
   colors: string;
   images: string;
   videoUrl: string | null;
+  stock_quantity?: number;
+  low_stock_threshold?: number;
+  is_out_of_stock?: boolean;
 }
 
 interface ProductsClientProps {
@@ -21,6 +26,7 @@ interface ProductsClientProps {
 
 export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts }) => {
   const [products, setProducts] = useState<Product[]>(initialProducts);
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
@@ -33,6 +39,8 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
   const [videoUrl, setVideoUrl] = useState('');
   const [images, setImages] = useState('');
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
+  const [stockQuantity, setStockQuantity] = useState<number>(10);
+  const [lowStockThreshold, setLowStockThreshold] = useState<number>(10);
 
   // Interactive Upload States
   const [isUploadingVideo, setIsUploadingVideo] = useState(false);
@@ -47,7 +55,7 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
   const videoInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
-  const sizesOptions = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+  const sizesOptions = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', '4XL', '5XL'];
 
   const openAddForm = () => {
     setEditingProduct(null);
@@ -59,6 +67,8 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
     setVideoUrl('');
     setImages('');
     setSelectedSizes(['M', 'L']);
+    setStockQuantity(10);
+    setLowStockThreshold(10);
     setUploadedVideoName('');
     setUploadedImageNames([]);
     setVideoProgress(0);
@@ -75,13 +85,39 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
     setColors(prod.colors);
     setVideoUrl(prod.videoUrl || '');
     setImages(prod.images);
-    setSelectedSizes(prod.sizes.split(',').map((s) => s.trim()));
+    setSelectedSizes(prod.sizes ? prod.sizes.split(',').map((s) => s.trim()) : []);
+    setStockQuantity(prod.stock_quantity ?? 0);
+    setLowStockThreshold(prod.low_stock_threshold ?? 10);
     setUploadedVideoName(prod.videoUrl ? 'Existing promo video' : '');
     setUploadedImageNames(prod.images ? ['Existing catalog images'] : []);
     setVideoProgress(0);
     setImagesProgress(0);
     setIsFormOpen(true);
   };
+
+  // Real-time search filter with search results at top of list
+  const filteredProducts = useMemo(() => {
+    if (!searchQuery.trim()) return products;
+
+    const query = searchQuery.toLowerCase();
+    const matches: Product[] = [];
+    const nonMatches: Product[] = [];
+
+    products.forEach((p) => {
+      if (
+        p.name.toLowerCase().includes(query) ||
+        p.description.toLowerCase().includes(query) ||
+        p.category.toLowerCase().includes(query) ||
+        p.colors.toLowerCase().includes(query)
+      ) {
+        matches.push(p);
+      } else {
+        nonMatches.push(p);
+      }
+    });
+
+    return [...matches, ...nonMatches];
+  }, [products, searchQuery]);
 
   // Video Drag-and-Drop / File Select handlers
   const handleVideoFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -214,6 +250,9 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
       colors,
       images,
       videoUrl: videoUrl.trim() || null,
+      stock_quantity: stockQuantity,
+      low_stock_threshold: lowStockThreshold,
+      is_out_of_stock: stockQuantity <= 0,
     };
 
     try {
@@ -253,29 +292,38 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
     }
   };
 
+  const handleStockUpdate = (updatedProduct: Product) => {
+    setProducts((prev) => prev.map((p) => (p.id === updatedProduct.id ? updatedProduct : p)));
+  };
+
   return (
     <div className="space-y-6">
-      {/* Header and Add Button */}
-      <div className="flex justify-between items-center">
+      {/* Header, Search and Add Button */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-wider text-white uppercase">Product Management</h1>
           <p className="text-xs text-neutral-400 font-light mt-1 uppercase tracking-wider">
-            Add, update, or remove clothing items in your storefront catalog
+            Add, update stock, search, or remove clothing items in catalog
           </p>
         </div>
-        <button
-          onClick={openAddForm}
-          className="inline-flex items-center bg-accent hover:bg-accent-hover text-neutral-950 text-xs font-bold tracking-wider uppercase px-4 py-2.5 rounded-sm shadow-md transition-colors"
-        >
-          <Plus className="h-4 w-4 mr-2" /> Add Product
-        </button>
+
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <ProductSearch onSearch={setSearchQuery} />
+
+          <button
+            onClick={openAddForm}
+            className="inline-flex items-center justify-center bg-accent hover:bg-accent-hover text-neutral-950 text-xs font-bold tracking-wider uppercase px-4 py-2.5 rounded-sm shadow-md transition-colors whitespace-nowrap"
+          >
+            <Plus className="h-4 w-4 mr-2" /> Add Product
+          </button>
+        </div>
       </div>
 
       {/* Product List Table */}
       <div className="bg-neutral-950/80 backdrop-blur-md border border-neutral-800 rounded-lg overflow-hidden">
-        {products.length === 0 ? (
+        {filteredProducts.length === 0 ? (
           <div className="p-20 text-center text-neutral-500">
-            No products in catalog. Click "Add Product" to populate your inventory.
+            {searchQuery ? `No products matching "${searchQuery}".` : 'No products in catalog. Click "Add Product" to populate your inventory.'}
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -286,19 +334,20 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
                   <th className="p-4">Product Details</th>
                   <th className="p-4">Category</th>
                   <th className="p-4">Price</th>
+                  <th className="p-4">Stock Management</th>
                   <th className="p-4">Promo Video</th>
                   <th className="p-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-800/60">
-                {products.map((product) => {
-                  const imageArray = product.images.split(',');
+                {filteredProducts.map((product) => {
+                  const imageArray = product.images ? product.images.split(',') : [];
                   return (
                     <tr key={product.id} className="hover:bg-neutral-900/30 transition-colors">
                       {/* Image */}
                       <td className="p-4">
                         <div className="h-16 w-12 rounded-md overflow-hidden bg-neutral-900 border border-neutral-800 relative">
-                          <img src={imageArray[0]} alt={product.name} className="h-full w-full object-cover" />
+                          <img src={imageArray[0] || 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=600&auto=format&fit=crop'} alt={product.name} className="h-full w-full object-cover" />
                         </div>
                       </td>
 
@@ -315,6 +364,11 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
 
                       {/* Price */}
                       <td className="p-4 font-mono font-semibold text-accent">${product.price.toFixed(2)}</td>
+
+                      {/* Stock Management */}
+                      <td className="p-4">
+                        <StockManagement product={product} onUpdate={handleStockUpdate} />
+                      </td>
 
                       {/* Video status */}
                       <td className="p-4">
@@ -434,6 +488,35 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
                           onChange={(e) => setColors(e.target.value)}
                           placeholder="e.g. Camel, Black, Ivory"
                           className="w-full bg-[#1c1c1a] border border-neutral-750 rounded-sm py-2.5 px-3 text-sm focus:outline-hidden focus:border-accent text-white"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-2">
+                          Initial Stock Quantity
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={stockQuantity}
+                          onChange={(e) => setStockQuantity(parseInt(e.target.value, 10) || 0)}
+                          placeholder="e.g. 25"
+                          className="w-full bg-[#1c1c1a] border border-neutral-750 rounded-sm py-2.5 px-3 text-sm focus:outline-hidden focus:border-accent text-white font-mono"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-2">
+                          Low Stock Threshold Alert
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          value={lowStockThreshold}
+                          onChange={(e) => setLowStockThreshold(parseInt(e.target.value, 10) || 10)}
+                          placeholder="Default 10"
+                          className="w-full bg-[#1c1c1a] border border-neutral-750 rounded-sm py-2.5 px-3 text-sm focus:outline-hidden focus:border-accent text-white font-mono"
                         />
                       </div>
                     </div>

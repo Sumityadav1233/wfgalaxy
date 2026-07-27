@@ -29,25 +29,32 @@ export default function OrderNowModal({ product, selectedSize, onClose }: OrderN
     
     // Calculate total price
     const totalPrice = product.price * formData.quantity;
-    
-    // Construct message
-    const message = `*New Order: ${product.name}*
-    
-*Customer Details*
-Name: ${formData.name}
-Phone: ${formData.phone}
-Address: ${formData.address}
+    const imageUrl = Array.isArray(product.image_urls)
+      ? product.image_urls[0]
+      : (product.images ? product.images.split(',')[0] : '');
 
-*Order Details*
-Product ID: ${product.id}
-Size: ${selectedSize}
-Quantity: ${formData.quantity}
-Total Price: Rs. ${totalPrice.toLocaleString()}
+    // Construct enhanced WhatsApp message with product image URL
+    const message = `*NEW ORDER: ${product.name}*
 
-*Additional Notes*
+*Product Image:* ${imageUrl || 'N/A'}
+
+*Customer Details:*
+• Name: ${formData.name}
+• Phone: ${formData.phone}
+• Delivery Address: ${formData.address}
+
+*Order Details:*
+• Item: ${product.name}
+• Product ID: ${product.id}
+• Size: ${selectedSize || 'Standard'}
+• Unit Price: Rs. ${Number(product.price).toLocaleString()}
+• Quantity: ${formData.quantity}
+• Total Price: Rs. ${totalPrice.toLocaleString()}
+
+*Special Notes:*
 ${formData.notes || 'None'}
 
-Please confirm my order.`;
+Please confirm my order details and dispatch timeline. Thank you!`;
 
     const encodedMessage = encodeURIComponent(message);
     const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;

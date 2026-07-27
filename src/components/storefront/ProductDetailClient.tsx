@@ -2,8 +2,9 @@
 
 import React, { useState, useMemo } from 'react';
 import OrderNowModal from './OrderNowModal';
+import MobileImageCarousel from './MobileImageCarousel';
 import { useCart } from '@/context/CartContext';
-import { ShoppingBag, ChevronDown, ChevronUp, Check, Play, Truck, ShieldCheck, RefreshCw } from 'lucide-react';
+import { ShoppingBag, ChevronDown, ChevronUp, Check, Play, Truck, ShieldCheck, RefreshCw, AlertCircle, X } from 'lucide-react';
 
 interface ProductDetailClientProps {
   product: any;
@@ -48,6 +49,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
   const [selectedColor, setSelectedColor] = useState<string>(colors[0] || '');
 
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+  const [showOutOfStockModal, setShowOutOfStockModal] = useState(false);
   const [addedToCartSuccess, setAddedToCartSuccess] = useState(false);
   
   // Accordion open states
@@ -55,7 +57,17 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
 
   const { addToCart } = useCart();
 
+  const isOutOfStock = Boolean(
+    product.is_out_of_stock ||
+    (product.stock_quantity !== undefined && Number(product.stock_quantity) <= 0)
+  );
+
   const handleAddToCart = () => {
+    if (isOutOfStock) {
+      setShowOutOfStockModal(true);
+      return;
+    }
+
     if (sizes.length > 0 && !selectedSize) {
       alert('Please select a size first.');
       return;
@@ -75,6 +87,11 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
   };
 
   const handleOrderClick = () => {
+    if (isOutOfStock) {
+      setShowOutOfStockModal(true);
+      return;
+    }
+
     if (sizes.length > 0 && !selectedSize) {
       alert('Please select a size before placing an order.');
       return;
@@ -90,8 +107,19 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start">
-      {/* Left Column: Image & Video Gallery (7 cols) */}
-      <div className="lg:col-span-7 flex flex-col-reverse md:flex-row gap-4">
+      {/* Mobile Swipeable Image Carousel (Visible on Small / Touch Screens) */}
+      <div className="lg:hidden col-span-1 border-b border-gray-100 pb-6">
+        <MobileImageCarousel
+          images={images}
+          productName={product.name}
+          productPrice={Number(product.price) || 0}
+          productSize={selectedSize}
+          isOutOfStock={isOutOfStock}
+        />
+      </div>
+
+      {/* Left Column: Image & Video Gallery (7 cols - Desktop) */}
+      <div className="hidden lg:flex lg:col-span-7 flex-col-reverse md:flex-row gap-4">
         {/* Thumbnails list */}
         {images.length > 1 && (
           <div className="flex md:flex-col gap-3 overflow-x-auto md:overflow-y-auto max-h-[600px] no-scrollbar py-1">
@@ -120,7 +148,15 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
             }}
           />
 
-          {product.is_latest && (
+          {isOutOfStock && (
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] flex items-center justify-center pointer-events-none">
+              <span className="bg-red-600 text-white font-bold text-sm px-5 py-2.5 rounded-full uppercase tracking-widest shadow-xl border border-red-400">
+                Out of Stock
+              </span>
+            </div>
+          )}
+
+          {product.is_latest && !isOutOfStock && (
             <span className="absolute top-4 left-4 bg-[#3B2A20] text-white text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wider shadow-md">
               New Arrival
             </span>
@@ -141,9 +177,15 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
             <span className="text-2xl font-bold text-[#3B2A20]">
               Rs. {Number(product.price || 0).toLocaleString()}
             </span>
-            <span className="text-xs text-green-600 bg-green-50 px-2.5 py-1 rounded-full font-bold">
-              In Stock
-            </span>
+            {isOutOfStock ? (
+              <span className="text-xs text-red-600 bg-red-50 px-2.5 py-1 rounded-full font-bold">
+                Out of Stock
+              </span>
+            ) : (
+              <span className="text-xs text-green-600 bg-green-50 px-2.5 py-1 rounded-full font-bold">
+                In Stock {product.stock_quantity ? `(${product.stock_quantity} left)` : ''}
+              </span>
+            )}
           </div>
           <p className="text-sm text-gray-600 leading-relaxed">
             {product.description || "A premium everyday essential. Handcrafted with precision and the finest materials for maximum comfort and style."}
@@ -220,13 +262,18 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
         <div className="flex flex-col sm:flex-row gap-3 pt-2">
           <button
             onClick={handleAddToCart}
+            disabled={isOutOfStock}
             className={`flex-1 flex items-center justify-center py-4 rounded-xl font-bold text-sm uppercase tracking-wider transition-all duration-300 border-2 ${
-              addedToCartSuccess
+              isOutOfStock
+                ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'
+                : addedToCartSuccess
                 ? 'bg-green-600 border-green-600 text-white'
                 : 'border-[#3B2A20] text-[#3B2A20] hover:bg-[#3B2A20] hover:text-white'
             }`}
           >
-            {addedToCartSuccess ? (
+            {isOutOfStock ? (
+              <span>Out of Stock</span>
+            ) : addedToCartSuccess ? (
               <span className="flex items-center"><Check className="w-4 h-4 mr-2" /> Added to Cart</span>
             ) : (
               <span className="flex items-center"><ShoppingBag className="w-4 h-4 mr-2" /> Add to Cart</span>
@@ -235,9 +282,14 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
 
           <button
             onClick={handleOrderClick}
-            className="flex-1 bg-[#3B2A20] text-white py-4 rounded-xl font-bold text-sm uppercase tracking-wider hover:bg-[#F5820B] transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5 duration-200"
+            disabled={isOutOfStock}
+            className={`flex-1 py-4 rounded-xl font-bold text-sm uppercase tracking-wider transition-all shadow-md ${
+              isOutOfStock
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-none'
+                : 'bg-[#3B2A20] text-white hover:bg-[#F5820B] hover:shadow-lg transform hover:-translate-y-0.5 duration-200'
+            }`}
           >
-            Order Now
+            {isOutOfStock ? 'Out of Stock' : 'Order Now'}
           </button>
         </div>
 
@@ -305,6 +357,33 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
           selectedSize={selectedSize} 
           onClose={() => setIsOrderModalOpen(false)} 
         />
+      )}
+
+      {/* Out of stock alert modal */}
+      {showOutOfStockModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl relative text-center animate-scale-in">
+            <button
+              onClick={() => setShowOutOfStockModal(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 p-1"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <div className="w-12 h-12 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertCircle className="w-6 h-6" />
+            </div>
+            <h3 className="text-lg font-bold text-[#3B2A20] mb-2">Item Out of Stock</h3>
+            <p className="text-xs text-gray-500 mb-6 leading-relaxed">
+              We're sorry! "{product.name}" is currently sold out. Please check back later or contact us on WhatsApp to inquire about restocks.
+            </p>
+            <button
+              onClick={() => setShowOutOfStockModal(false)}
+              className="w-full bg-[#3B2A20] text-white font-bold text-xs uppercase tracking-wider py-3 rounded-xl hover:bg-[#F5820B] transition-colors"
+            >
+              Understand
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

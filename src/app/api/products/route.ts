@@ -14,11 +14,26 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, description, price, category, sizes, colors, images, videoUrl } = await req.json();
+    const {
+      name,
+      description,
+      price,
+      category,
+      sizes,
+      colors,
+      images,
+      videoUrl,
+      stock_quantity = 0,
+      low_stock_threshold = 10,
+      is_out_of_stock,
+    } = await req.json();
 
     if (!name || !description || !price || !category || !sizes || !colors || !images) {
       return NextResponse.json({ error: 'Missing required product details' }, { status: 400 });
     }
+
+    const qty = parseInt(stock_quantity, 10) || 0;
+    const computedOutOfStock = is_out_of_stock !== undefined ? Boolean(is_out_of_stock) : qty <= 0;
 
     const newProduct = await prisma.product.create({
       data: {
@@ -30,6 +45,9 @@ export async function POST(req: NextRequest) {
         colors,
         images,
         videoUrl: videoUrl || null,
+        stock_quantity: qty,
+        low_stock_threshold: parseInt(low_stock_threshold, 10) || 10,
+        is_out_of_stock: computedOutOfStock,
       },
     });
 

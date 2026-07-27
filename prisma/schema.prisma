@@ -10,21 +10,31 @@ datasource db {
 }
 
 model Product {
-  id          String   @id @default(uuid())
-  name        String
-  description String
-  price       Float
-  category    String
-  subcategory String?
-  sizes       String   // Comma-separated string, e.g. "S,M,L,XL"
-  colors      String   // Comma-separated string, e.g. "Black,White,Emerald"
-  images      String   // Comma-separated string or JSON array of image paths/URLs
-  videoUrl    String?  // URL/path to the raw product video
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                String   @id @default(uuid())
+  name              String
+  description       String
+  price             Float
+  category          String
+  subcategory       String?
+  sizes             String   // Comma-separated string, e.g. "S,M,L,XL"
+  colors            String   // Comma-separated string, e.g. "Black,White,Emerald"
+  images            String   // Comma-separated string or JSON array of image paths/URLs
+  videoUrl          String?  // URL/path to the raw product video
+  stock_quantity    Int      @default(0)
+  low_stock_threshold Int    @default(10)
+  is_out_of_stock   Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   videos      ProductVideo[]
   posts       SocialPost[]
+}
+
+model Admin {
+  id        String   @id @default(uuid())
+  user_id   String?
+  email     String   @unique
+  createdAt DateTime @default(now())
 }
 
 model ProductVideo {

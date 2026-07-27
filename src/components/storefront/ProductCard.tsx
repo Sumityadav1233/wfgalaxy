@@ -45,12 +45,16 @@ export default function ProductCard({ product }: ProductCardProps) {
   return (
     <Link href={`/product/${product.id}`} className="group block w-full">
       <div className="relative aspect-[3/4] overflow-hidden bg-[#F5F4F0] rounded-2xl mb-3 shadow-xs transition-all duration-300 group-hover:shadow-md">
-        {/* New Badge */}
-        {product.is_latest && (
+        {/* Out of Stock / New Badge */}
+        {product.is_out_of_stock || (product.stock_quantity !== undefined && Number(product.stock_quantity) <= 0) ? (
+          <div className="absolute top-2.5 left-2.5 z-10 bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shadow-xs">
+            Sold Out
+          </div>
+        ) : product.is_latest ? (
           <div className="absolute top-2.5 left-2.5 z-10 bg-[#3B2A20] text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shadow-xs">
             New
           </div>
-        )}
+        ) : null}
 
         {/* Wishlist Heart Icon Button (Top Right of Card) */}
         <button

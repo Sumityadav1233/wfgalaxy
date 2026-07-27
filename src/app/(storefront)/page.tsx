@@ -4,7 +4,9 @@ import ProductGrid from '@/components/storefront/ProductGrid';
 import { Play } from 'lucide-react';
 import { createPublicClient } from '@/lib/supabase/server';
 
-export const revalidate = 60; // Revalidate every minute
+import prisma from '@/lib/db';
+
+export const revalidate = 60; // ISR static regeneration every minute
 
 async function getLatestProducts() {
   try {
@@ -15,13 +17,21 @@ async function getLatestProducts() {
       .order('created_at', { ascending: false })
       .limit(10);
 
-    if (error) {
-      console.error('Error fetching latest products:', error);
-      return [];
+    if (!error && products && products.length > 0) {
+      return products;
     }
-    return products || [];
   } catch (err) {
     console.error('Exception in getLatestProducts:', err);
+  }
+
+  try {
+    const dbProducts = await prisma.product.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+    });
+    return dbProducts;
+  } catch (err) {
+    console.error('Prisma fallback error:', err);
     return [];
   }
 }
@@ -46,14 +56,14 @@ export default async function HomePage() {
           
           {/* Mobile Clean Hero Layout (Full Width Reel Video Card, No Duplicate Logo) */}
           <div className="w-full md:hidden flex flex-col items-center">
-            <Link href="/men" className="w-full rounded-3xl overflow-hidden shadow-2xl border border-gray-200 aspect-[4/5] relative group block bg-black">
+            <Link href="/men" className="w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl border border-gray-200 aspect-[4/5] relative group block bg-[#FAF9F6]">
               <video 
                 src="/hero-video.mp4" 
                 autoPlay 
                 loop 
                 muted 
                 playsInline 
-                className="absolute inset-0 w-full h-full object-cover object-center"
+                className="absolute inset-0 w-full h-full min-w-full min-h-full object-cover object-center scale-105"
                 style={{ objectFit: 'cover', objectPosition: 'center', width: '100%', height: '100%' }}
               />
               <div className="absolute bottom-3 left-3 right-3 bg-white/90 backdrop-blur-md p-3.5 rounded-2xl flex justify-between items-center shadow-sm z-10">

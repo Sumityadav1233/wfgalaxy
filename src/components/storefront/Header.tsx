@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Search, User, Menu, X, ShoppingBag, ArrowRight } from 'lucide-react';
+import { Search, Menu, X, ShoppingBag, ArrowRight } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
 
@@ -103,19 +103,6 @@ export default function Header() {
                     <button type="submit" className="hidden">Search</button>
                   </form>
                 </div>
-              </div>
-
-              <Link href="/admin/login" className="text-[#3B2A20] hover:text-[#F5820B] transition-colors" aria-label="Admin Login">
-                <User className="h-5 w-5" />
-              </Link>
-              
-              <div className="flex items-center space-x-3 border-l border-gray-200 pl-6">
-                <Link href="/admin/login" className="text-sm font-medium text-[#3B2A20] hover:text-[#F5820B] transition-colors">
-                  Login
-                </Link>
-                <Link href="/admin/login" className="bg-[#3B2A20] text-white text-sm font-medium px-4 py-2 rounded-full hover:bg-[#F5820B] transition-colors">
-                  Sign Up
-                </Link>
               </div>
             </div>
 
