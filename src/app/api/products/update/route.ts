@@ -16,9 +16,9 @@ export async function POST(req: NextRequest) {
     if (description !== undefined) updateData.description = description;
     if (price !== undefined) updateData.price = parseFloat(price);
     if (category !== undefined) updateData.category = category;
-    if (sizes !== undefined) updateData.sizes = sizes;
-    if (colors !== undefined) updateData.colors = colors;
-    if (images !== undefined) updateData.images = images;
+    if (sizes !== undefined) updateData.sizes = Array.isArray(sizes) ? sizes.join(',') : String(sizes);
+    if (colors !== undefined) updateData.colors = Array.isArray(colors) ? colors.join(',') : String(colors);
+    if (images !== undefined) updateData.images = Array.isArray(images) ? images.join(',') : String(images);
     if (videoUrl !== undefined) updateData.videoUrl = videoUrl || null;
     
     if (stock_quantity !== undefined) {

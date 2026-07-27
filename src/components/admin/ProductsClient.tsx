@@ -34,7 +34,8 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
-  const [category, setCategory] = useState('Outerwear');
+  const [category, setCategory] = useState('men');
+  const [subcategory, setSubcategory] = useState('');
   const [colors, setColors] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
   const [images, setImages] = useState('');
@@ -62,11 +63,12 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
     setName('');
     setDescription('');
     setPrice('');
-    setCategory('Outerwear');
-    setColors('');
+    setCategory('men');
+    setSubcategory('');
+    setColors('Black, White');
     setVideoUrl('');
     setImages('');
-    setSelectedSizes(['M', 'L']);
+    setSelectedSizes(['M', 'L', 'XL']);
     setStockQuantity(10);
     setLowStockThreshold(10);
     setUploadedVideoName('');
@@ -81,10 +83,11 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
     setName(prod.name);
     setDescription(prod.description);
     setPrice(prod.price.toString());
-    setCategory(prod.category);
-    setColors(prod.colors);
+    setCategory(prod.category || 'men');
+    setSubcategory((prod as any).subcategory || '');
+    setColors(prod.colors || 'Black, White');
     setVideoUrl(prod.videoUrl || '');
-    setImages(prod.images);
+    setImages(prod.images || '');
     setSelectedSizes(prod.sizes ? prod.sizes.split(',').map((s) => s.trim()) : []);
     setStockQuantity(prod.stock_quantity ?? 0);
     setLowStockThreshold(prod.low_stock_threshold ?? 10);
@@ -161,7 +164,7 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
     }
   };
 
-  const processImageFiles = (files: File[]) => {
+  const processImageFiles = async (files: File[]) => {
     const validImages = files.filter((f) => f.type.startsWith('image/'));
     if (validImages.length === 0) {
       alert('Please select valid image files (JPG/PNG/WEBP).');
@@ -169,23 +172,32 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
     }
 
     setIsUploadingImages(true);
-    setImagesProgress(0);
+    setImagesProgress(30);
     setUploadedImageNames((prev) => [...prev, ...validImages.map((f) => f.name)]);
 
-    // Simulate upload progress
-    const interval = setInterval(() => {
-      setImagesProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setIsUploadingImages(false);
-          // Read files and generate object URLs
-          const localUrls = validImages.map((f) => URL.createObjectURL(f)).join(',');
-          setImages((prevImgs) => (prevImgs ? `${prevImgs},${localUrls}` : localUrls));
-          return 100;
-        }
-        return prev + 20;
-      });
-    }, 100);
+    try {
+      const readAsDataUrl = (file: File): Promise<string> => {
+        return new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = () => resolve('');
+          reader.readAsDataURL(file);
+        });
+      };
+
+      const dataUrls = await Promise.all(validImages.map(readAsDataUrl));
+      const validUrls = dataUrls.filter(Boolean);
+
+      if (validUrls.length > 0) {
+        const joined = validUrls.join(',');
+        setImages((prevImgs) => (prevImgs ? `${prevImgs},${joined}` : joined));
+      }
+    } catch (err) {
+      console.error('Image upload error:', err);
+    } finally {
+      setImagesProgress(100);
+      setIsUploadingImages(false);
+    }
   };
 
   const clearVideo = () => {
@@ -231,24 +243,24 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!name.trim() || !description.trim() || !price || !category || !colors.trim() || !images.trim()) {
-      alert('Please fill out all required fields.');
+    if (!name.trim() || !description.trim() || !price) {
+      alert('Please enter Product Name, Description, and Price.');
       return;
     }
 
-    if (selectedSizes.length === 0) {
-      alert('Please select at least one size.');
-      return;
-    }
+    const finalSizes = selectedSizes.length > 0 ? selectedSizes.join(',') : 'S,M,L,XL';
+    const finalColors = colors.trim() || 'Black, White';
+    const finalImages = images.trim() || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80';
 
     const payload = {
-      name,
-      description,
+      name: name.trim(),
+      description: description.trim(),
       price: parseFloat(price),
-      category,
-      sizes: selectedSizes.join(','),
-      colors,
-      images,
+      category: category || 'men',
+      subcategory: subcategory.trim() || null,
+      sizes: finalSizes,
+      colors: finalColors,
+      images: finalImages,
       videoUrl: videoUrl.trim() || null,
       stock_quantity: stockQuantity,
       low_stock_threshold: lowStockThreshold,
@@ -269,7 +281,8 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
           setProducts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
           setIsFormOpen(false);
         } else {
-          alert('Failed to update product');
+          const errData = await res.json();
+          alert(`Failed to update product: ${errData.error || errData.details || 'Unknown error'}`);
         }
       } else {
         // Add flow
@@ -284,11 +297,13 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
           setProducts((prev) => [created, ...prev]);
           setIsFormOpen(false);
         } else {
-          alert('Failed to create product');
+          const errData = await res.json();
+          alert(`Failed to create product: ${errData.error || errData.details || 'Unknown error'}`);
         }
       }
-    } catch (err) {
-      console.error('Form submit error:', err);
+    } catch (err: any) {
+      console.error('Submit Product Error:', err);
+      alert(`Network error: ${err.message || String(err)}`);
     }
   };
 
@@ -446,23 +461,39 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
                       </div>
                       <div>
                         <label className="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-2">
-                          Category *
+                          Primary Category *
                         </label>
                         <select
                           value={category}
                           onChange={(e) => setCategory(e.target.value)}
                           className="w-full bg-[#1c1c1a] border border-neutral-750 rounded-sm py-2.5 px-3 text-sm focus:outline-hidden focus:border-accent text-white font-semibold"
                         >
-                          <option value="Outerwear">Outerwear</option>
-                          <option value="Shirts">Shirts</option>
-                          <option value="Pants">Pants</option>
-                          <option value="Dresses">Dresses</option>
+                          <option value="men">Men's Collection</option>
+                          <option value="women">Women's Collection</option>
+                          <option value="shoes">Shoes & Footwear</option>
+                          <option value="accessories">Accessories</option>
+                          <option value="Outerwear">Outerwear & Jackets</option>
+                          <option value="Shirts">Shirts & Tops</option>
+                          <option value="Pants">Pants & Trousers</option>
+                          <option value="Dresses">Dresses & Skirts</option>
                           <option value="Activewear">Activewear</option>
                         </select>
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-2">
+                          Subcategory (Optional)
+                        </label>
+                        <input
+                          type="text"
+                          value={subcategory}
+                          onChange={(e) => setSubcategory(e.target.value)}
+                          placeholder="e.g. Hoodies, Jeans, Sneakers"
+                          className="w-full bg-[#1c1c1a] border border-neutral-750 rounded-sm py-2.5 px-3 text-sm focus:outline-hidden focus:border-accent text-white"
+                        />
+                      </div>
                       <div>
                         <label className="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-2">
                           Price ($ USD) *
