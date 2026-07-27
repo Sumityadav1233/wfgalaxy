@@ -27,7 +27,16 @@ export async function POST(request: Request) {
 
   await supabase.auth.signOut()
 
-  return NextResponse.redirect(new URL('/', request.url), {
+  const response = NextResponse.redirect(new URL('/admin/login', request.url), {
     status: 302,
   })
+
+  response.cookies.set({
+    name: 'wf_galaxy_admin_session',
+    value: '',
+    path: '/',
+    maxAge: 0,
+  })
+
+  return response;
 }

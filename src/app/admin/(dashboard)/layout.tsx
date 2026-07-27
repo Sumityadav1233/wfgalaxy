@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 
+import { cookies } from 'next/headers';
+
 export const revalidate = 0;
 
 export default async function DashboardLayout({
@@ -13,8 +15,11 @@ export default async function DashboardLayout({
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  // Server-side authentication guard
-  if (!user) {
+  const cookieStore = await cookies();
+  const adminSession = cookieStore.get('wf_galaxy_admin_session')?.value;
+
+  // Server-side authentication guard: Check either Supabase Auth OR direct admin session cookie
+  if (!user && !adminSession) {
     redirect('/admin/login');
   }
 

@@ -39,7 +39,14 @@ export async function updateSession(request: NextRequest) {
       data: { user },
     } = await supabase.auth.getUser()
 
+    const adminCookie = request.cookies.get('wf_galaxy_admin_session')?.value
+
     if (request.nextUrl.pathname.startsWith('/admin') && request.nextUrl.pathname !== '/admin/login') {
+      if (adminCookie) {
+        // Authenticated via direct email & password session cookie
+        return supabaseResponse
+      }
+
       if (!user) {
         const url = request.nextUrl.clone()
         url.pathname = '/admin/login'
