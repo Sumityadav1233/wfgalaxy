@@ -2,12 +2,11 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import GoogleLoginButton from '@/components/GoogleLoginButton';
-import { Lock, Mail, Key, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Lock, Mail, ArrowRight, ShieldCheck } from 'lucide-react';
 
 export default function AdminLoginForm() {
   const router = useRouter();
-  const [email, setEmail] = useState('mrgf7h@gmail.com');
+  const [email, setEmail] = useState('wfgalaxy6977@gmail.com');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -18,11 +17,10 @@ export default function AdminLoginForm() {
     setErrorMsg('');
 
     try {
-      // API call to verify admin session
       const res = await fetch('/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: email.trim(), password: password.trim() }),
       });
 
       const data = await res.json();
@@ -31,10 +29,10 @@ export default function AdminLoginForm() {
         router.push('/admin');
         router.refresh();
       } else {
-        setErrorMsg(data.error || 'Invalid admin credentials');
+        setErrorMsg(data.error || 'Invalid email or password');
       }
     } catch (err) {
-      setErrorMsg('Failed to log in. Please try again.');
+      setErrorMsg('Failed to log in. Please check network connection.');
     } finally {
       setIsLoading(false);
     }
@@ -47,7 +45,7 @@ export default function AdminLoginForm() {
       </div>
 
       <h1 className="text-2xl font-serif text-[#3B2A20] font-bold">WF GALAXY</h1>
-      <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mt-1 mb-6">Admin Management Portal</p>
+      <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mt-1 mb-6">Direct Admin Login</p>
 
       {errorMsg && (
         <div className="w-full mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs font-medium text-center">
@@ -58,7 +56,7 @@ export default function AdminLoginForm() {
       <form onSubmit={handleLogin} className="w-full space-y-4 text-left">
         <div>
           <label className="block text-xs font-bold text-[#3B2A20] uppercase tracking-wider mb-1">
-            Admin Email
+            Admin Email Address
           </label>
           <div className="relative">
             <input
@@ -66,7 +64,7 @@ export default function AdminLoginForm() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@wfgalaxy.com"
+              placeholder="wfgalaxy6977@gmail.com"
               className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 pl-10 pr-4 text-xs font-medium text-[#3B2A20] focus:outline-hidden focus:border-[#F5820B]"
             />
             <Mail className="w-4 h-4 text-gray-400 absolute left-3.5 top-3.5" />
@@ -75,7 +73,7 @@ export default function AdminLoginForm() {
 
         <div>
           <label className="block text-xs font-bold text-[#3B2A20] uppercase tracking-wider mb-1">
-            Admin Password / PIN
+            Admin Password
           </label>
           <div className="relative">
             <input
@@ -83,7 +81,7 @@ export default function AdminLoginForm() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter admin password (e.g. admin123)"
+              placeholder="Enter password"
               className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 pl-10 pr-4 text-xs font-medium text-[#3B2A20] focus:outline-hidden focus:border-[#F5820B]"
             />
             <Lock className="w-4 h-4 text-gray-400 absolute left-3.5 top-3.5" />
@@ -95,18 +93,10 @@ export default function AdminLoginForm() {
           disabled={isLoading}
           className="w-full bg-[#3B2A20] hover:bg-[#F5820B] text-white font-bold text-xs uppercase tracking-wider py-3.5 rounded-xl shadow-md transition-all flex items-center justify-center space-x-2"
         >
-          <span>{isLoading ? 'Authenticating...' : 'Log In to Admin'}</span>
+          <span>{isLoading ? 'Verifying Credentials...' : 'Sign In to Dashboard'}</span>
           <ArrowRight className="w-4 h-4" />
         </button>
       </form>
-
-      <div className="my-6 w-full flex items-center justify-center space-x-3">
-        <div className="flex-1 h-px bg-gray-200" />
-        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">OR</span>
-        <div className="flex-1 h-px bg-gray-200" />
-      </div>
-
-      <GoogleLoginButton />
     </div>
   );
 }

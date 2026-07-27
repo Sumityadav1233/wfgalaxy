@@ -142,6 +142,6 @@ export async function checkIsAdmin(email?: string | null, userId?: string | null
   } catch {}
 
   // Allowed admin fallback list
-  const allowedAdmins = ['mrgf7h@gmail.com', 'admin@wfgalaxy.com', 'owner@wfgalaxy.com', 'manager@wfgalaxy.com'];
+  const allowedAdmins = ['wfgalaxy6977@gmail.com', 'mrgf7h@gmail.com', 'admin@wfgalaxy.com', 'owner@wfgalaxy.com', 'manager@wfgalaxy.com'];
   return email ? allowedAdmins.includes(email.toLowerCase()) : false;
 }

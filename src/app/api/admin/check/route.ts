@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
   } catch (error) {
     console.error('Admin Check Error:', error);
     // Default allowed fallback emails
-    const allowedAdmins = ['mrgf7h@gmail.com', 'admin@wfgalaxy.com', 'owner@wfgalaxy.com', 'manager@wfgalaxy.com'];
+    const allowedAdmins = ['wfgalaxy6977@gmail.com', 'mrgf7h@gmail.com', 'admin@wfgalaxy.com', 'owner@wfgalaxy.com', 'manager@wfgalaxy.com'];
     return NextResponse.json({ isAdmin: allowedAdmins.includes(email.toLowerCase()) });
   }
 }

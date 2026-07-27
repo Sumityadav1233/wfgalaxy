@@ -6,7 +6,7 @@ export async function POST(req: NextRequest) {
   try {
     const { email, password } = await req.json();
 
-    const allowedAdmins = ['mrgf7h@gmail.com', 'admin@wfgalaxy.com', 'owner@wfgalaxy.com', 'manager@wfgalaxy.com'];
+    const allowedAdmins = ['wfgalaxy6977@gmail.com', 'mrgf7h@gmail.com', 'admin@wfgalaxy.com', 'owner@wfgalaxy.com', 'manager@wfgalaxy.com'];
     let isAuthorizedAdmin = allowedAdmins.includes((email || '').toLowerCase());
 
     if (!isAuthorizedAdmin && email) {
@@ -19,14 +19,15 @@ export async function POST(req: NextRequest) {
     }
 
     if (!isAuthorizedAdmin) {
-      return NextResponse.json({ error: 'Unauthorized admin email. Access restricted.' }, { status: 403 });
+      return NextResponse.json({ error: 'Unauthorized admin email.' }, { status: 403 });
     }
 
-    // Default password check
-    if (password === 'admin123' || !password) {
+    // Password check for #7798WFgalaxy$ or admin123
+    const validPasswords = ['#7798WFgalaxy$', 'admin123'];
+    if (validPasswords.includes(password) || !password) {
       const response = NextResponse.json({ success: true });
       
-      // Set HttpOnly cookie for session tracking (lasts 1 day)
+      // Set HttpOnly cookie for session tracking (lasts 7 days)
       response.cookies.set({
         name: 'wf_galaxy_admin_session',
         value: email || 'true',
@@ -34,13 +35,13 @@ export async function POST(req: NextRequest) {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
-        maxAge: 60 * 60 * 24, // 1 day
+        maxAge: 60 * 60 * 24 * 7, // 7 days
       });
 
       return response;
     }
 
-    return NextResponse.json({ error: 'Incorrect password' }, { status: 401 });
+    return NextResponse.json({ error: 'Incorrect email or password' }, { status: 401 });
   } catch (err: any) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
