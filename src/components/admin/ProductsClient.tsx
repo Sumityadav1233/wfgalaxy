@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useMemo, useEffect } from 'react';
-import { Plus, Edit, Trash2, Video, X, Sparkles, Image as ImageIcon, Check, Tag } from 'lucide-react';
+import { Plus, Edit, Trash2, X, Sparkles, Image as ImageIcon, Tag } from 'lucide-react';
 import StockManagement from './StockManagement';
 import ProductSearch from './ProductSearch';
 import { createClient } from '@/lib/supabase/client';
@@ -26,14 +26,21 @@ interface ProductsClientProps {
   initialProducts: Product[];
 }
 
-const PRESET_CATALOG_IMAGES = [
-  { name: 'Men Linen Suit', url: 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=800&auto=format&fit=crop&q=80' },
-  { name: 'Casual Hoodie', url: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=800&auto=format&fit=crop&q=80' },
-  { name: 'Luxury Jacket', url: 'https://images.unsplash.com/photo-1544441893-675973e31985?w=800&auto=format&fit=crop&q=80' },
-  { name: 'Designer Sneakers', url: 'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=800&auto=format&fit=crop&q=80' },
-  { name: 'Women Evening Dress', url: 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=800&auto=format&fit=crop&q=80' },
-  { name: 'Leather Accessories', url: 'https://images.unsplash.com/photo-1627123424574-724758594e93?w=800&auto=format&fit=crop&q=80' },
+// ISSUE 1 FIX: Hardcode exactly 4 fixed Primary Categories
+const FIXED_CATEGORIES = [
+  { id: 'men', name: 'Men' },
+  { id: 'women', name: 'Women' },
+  { id: 'shoes', name: 'Shoes' },
+  { id: 'accessories', name: 'Accessories' }
 ];
+
+// ISSUE 2 FIX: Subcategory map per Main Category
+const SUBCATEGORY_MAP: Record<string, string[]> = {
+  men: ["Formal", "hoodies", "Jackets", "Jeans", "Kurta", "Pant", "shirts"],
+  women: ["Dresses", "Tops", "Skirts", "Jackets", "Jeans", "Kurta", "Shirts"],
+  shoes: ["Sneakers", "Boots", "Formals", "Loafers", "Sandals"],
+  accessories: ["Belts", "Wallets", "Caps", "Watches", "Sunglasses"],
+};
 
 export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts }) => {
   const [products, setProducts] = useState<Product[]>(initialProducts);
@@ -41,9 +48,8 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
-  // Dynamic Categories and Subcategories from database
-  const [dbCategories, setDbCategories] = useState<{ id: string; name: string }[]>([]);
-  const [dbSubcategories, setDbSubcategories] = useState<{ id: string; name: string; category_id?: string; categories?: { name: string } }[]>([]);
+  // Dynamic Subcategories from database
+  const [dbSubcategories, setDbSubcategories] = useState<{ id: string; name: string; categories?: { name: string } }[]>([]);
 
   // Form Field States
   const [name, setName] = useState('');
@@ -66,38 +72,32 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
   const imageInputRef = useRef<HTMLInputElement>(null);
   const sizesOptions = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', '4XL', '5XL'];
 
-  // Default fallback subcategories by main category
-  const FALLBACK_SUBCATEGORIES: Record<string, string[]> = {
-    men: ['shirts', 'pants', 'hoodies', 'jackets', 't-shirts', 'jeans'],
-    women: ['dresses', 'tops', 'skirts', 'jackets', 'jeans', 'sweaters'],
-    shoes: ['sneakers', 'boots', 'formals', 'loafers', 'sandals'],
-    accessories: ['belts', 'wallets', 'caps', 'watches', 'sunglasses'],
-  };
-
-  // Compute available subcategories based on selected Main Category
+  // Compute available subcategories dynamically filtered by selected Main Category (Issue 2)
   const availableSubcategories = useMemo(() => {
-    const normCat = category.toLowerCase();
-    const matchedSubs = dbSubcategories.filter((s) => {
-      const parentCatName = s.categories?.name?.toLowerCase();
-      return parentCatName === normCat;
-    }).map((s) => s.name);
+    const normCat = (category || 'men').toLowerCase();
+    
+    // Subcategories from database for this category
+    const dbSubs = dbSubcategories
+      .filter((s) => s.categories?.name?.toLowerCase() === normCat)
+      .map((s) => s.name);
 
-    if (matchedSubs.length > 0) return matchedSubs;
-    return FALLBACK_SUBCATEGORIES[normCat] || ['shirts', 'pants', 'hoodies', 'jackets'];
+    // Fallback/standard subcategories for this category
+    const defaultSubs = SUBCATEGORY_MAP[normCat] || ["Formal", "hoodies", "Jackets", "Jeans", "shirts"];
+
+    // Deduplicate
+    const combined = Array.from(new Set([...dbSubs, ...defaultSubs]));
+    return combined;
   }, [category, dbSubcategories]);
 
-  // Fetch dynamic categories and subcategories from Supabase
+  // Fetch dynamic subcategories from Supabase and handle URL search parameters
   useEffect(() => {
     async function loadCategoriesAndSubs() {
       try {
         const supabase = createClient();
-        const { data: cats } = await supabase.from('categories').select('*').order('name');
         const { data: subs } = await supabase.from('subcategories').select('*, categories(name)').order('name');
-        
-        if (cats && cats.length > 0) setDbCategories(cats);
         if (subs && subs.length > 0) setDbSubcategories(subs);
       } catch (err) {
-        console.warn('Category load notice:', err);
+        console.warn('Subcategories load notice:', err);
       }
     }
     loadCategoriesAndSubs();
@@ -140,15 +140,15 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
     setName(prod.name);
     setDescription(prod.description);
     setPrice(prod.price.toString());
-    setCategory(prod.category || 'men');
-    setSubcategory(prod.subcategory || '');
+    setCategory((prod.category || 'men').toLowerCase());
+    setSubcategory((prod.subcategory || '').toLowerCase());
     setColors(prod.colors || 'Black, White');
     setVideoUrl(prod.videoUrl || '');
     setImages(prod.images || '');
     setSelectedSizes(prod.sizes ? prod.sizes.split(',').map((s) => s.trim()) : []);
     setStockQuantity(prod.stock_quantity ?? 0);
     setLowStockThreshold(prod.low_stock_threshold ?? 10);
-    setUploadedImageNames(prod.images ? ['Catalog Image'] : []);
+    setUploadedImageNames(prod.images ? ['Uploaded Product Image'] : []);
     setImagesProgress(0);
     setIsFormOpen(true);
   };
@@ -161,11 +161,12 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
       p.name.toLowerCase().includes(query) ||
       p.description.toLowerCase().includes(query) ||
       p.category.toLowerCase().includes(query) ||
+      (p.subcategory && p.subcategory.toLowerCase().includes(query)) ||
       p.colors.toLowerCase().includes(query)
     );
   }, [products, searchQuery]);
 
-  // Image Drag-and-Drop / File Select handlers with safe URL handling
+  // ISSUE 4 FIX: Image Upload Handler (Real Photos Only, No Demo Subsitution)
   const handleImagesFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
@@ -187,19 +188,17 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
     try {
       const readAsDataUrl = (file: File): Promise<string> => {
         return new Promise((resolve) => {
-          if (file.size > 1024 * 1024) {
-            resolve('https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80');
-            return;
-          }
           const reader = new FileReader();
           reader.onload = () => resolve(reader.result as string);
-          reader.onerror = () => resolve('https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80');
+          reader.onerror = () => resolve('');
           reader.readAsDataURL(file);
         });
       };
 
       const dataUrls = await Promise.all(validImages.map(readAsDataUrl));
       const validUrls = dataUrls.filter(Boolean);
+
+      console.log("Uploaded image URL:", validUrls);
 
       if (validUrls.length > 0) {
         const joined = validUrls.join(',');
@@ -211,10 +210,6 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
       setImagesProgress(100);
       setIsUploadingImages(false);
     }
-  };
-
-  const selectPresetImage = (url: string) => {
-    setImages((prev) => (prev ? `${prev},${url}` : url));
   };
 
   const clearImages = () => {
@@ -230,8 +225,11 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
     );
   };
 
+  // ISSUE 6 FIX: Delete Product Handler
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this product? This action cannot be undone.')) return;
+
+    console.log("Deleting product ID:", id);
 
     try {
       const res = await fetch('/api/products/delete', {
@@ -251,6 +249,7 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
     }
   };
 
+  // ISSUE 5 & 6 FIX: Submit Product Handler (Saving real image URL, category & subcategory)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -267,8 +266,8 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
       name: name.trim(),
       description: description.trim(),
       price: parseFloat(price),
-      category: category || 'men',
-      subcategory: subcategory.trim() || null,
+      category: category.toLowerCase() || 'men',
+      subcategory: subcategory.trim().toLowerCase() || null,
       sizes: finalSizes,
       colors: finalColors,
       images: finalImages,
@@ -278,8 +277,12 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
       is_out_of_stock: stockQuantity <= 0,
     };
 
+    console.log("Uploaded image URL:", finalImages);
+    console.log("Saving to database:", payload);
+
     try {
       if (editingProduct) {
+        // Edit flow
         const res = await fetch('/api/products/update', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -297,6 +300,7 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
           setIsFormOpen(false);
         }
       } else {
+        // Add flow
         const res = await fetch('/api/products', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -368,7 +372,7 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
                 <tr className="border-b border-gray-200 bg-gray-50 text-[11px] font-bold uppercase tracking-wider text-[#3B2A20]">
                   <th className="p-4">Preview</th>
                   <th className="p-4">Product Details</th>
-                  <th className="p-4">Category</th>
+                  <th className="p-4">Category / Subcategory</th>
                   <th className="p-4">Price</th>
                   <th className="p-4">Stock Management</th>
                   <th className="p-4 text-right">Actions</th>
@@ -377,7 +381,7 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
               <tbody className="divide-y divide-gray-100">
                 {filteredProducts.map((product) => {
                   const imageArray = product.images ? product.images.split(',') : [];
-                  const previewImg = imageArray[0] && imageArray[0].startsWith('http') ? imageArray[0] : 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=600&auto=format&fit=crop';
+                  const previewImg = imageArray[0] && imageArray[0].startsWith('http') ? imageArray[0] : (imageArray[0] || 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=600&auto=format&fit=crop');
                   return (
                     <tr key={product.id} className="hover:bg-orange-50/30 transition-colors">
                       {/* Image */}
@@ -395,7 +399,7 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
                         </span>
                       </td>
 
-                      {/* Category */}
+                      {/* Category & Subcategory */}
                       <td className="p-4">
                         <span className="inline-flex items-center text-xs font-semibold bg-gray-100 text-gray-700 px-2.5 py-1 rounded-md capitalize">
                           <Tag className="w-3 h-3 mr-1 text-[#F5820B]" />
@@ -414,7 +418,7 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
                         <StockManagement product={product} onUpdate={handleStockUpdate} />
                       </td>
 
-                      {/* Actions */}
+                      {/* Actions (ISSUE 6 FIX) */}
                       <td className="p-4 text-right space-x-2">
                         <button
                           onClick={() => openEditForm(product)}
@@ -449,7 +453,7 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
         ) : (
           filteredProducts.map((product) => {
             const imageArray = product.images ? product.images.split(',') : [];
-            const previewImg = imageArray[0] && imageArray[0].startsWith('http') ? imageArray[0] : 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=600&auto=format&fit=crop';
+            const previewImg = imageArray[0] && imageArray[0].startsWith('http') ? imageArray[0] : (imageArray[0] || 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=600&auto=format&fit=crop');
             return (
               <div key={product.id} className="bg-white p-4 rounded-xl border border-gray-200 shadow-xs space-y-3">
                 <div className="flex items-center space-x-3">
@@ -486,7 +490,7 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
         )}
       </div>
 
-      {/* Form Slide-over Panel / Modal (White Theme) */}
+      {/* Form Slide-over Panel / Modal */}
       {isFormOpen && (
         <div className="fixed inset-0 z-50 overflow-hidden" aria-labelledby="slide-over-title" role="dialog" aria-modal="true">
           <div className="absolute inset-0 overflow-hidden">
@@ -524,26 +528,29 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
                           className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2.5 px-3 text-sm focus:outline-hidden focus:border-[#F5820B] focus:bg-white text-[#3B2A20] font-medium"
                         />
                       </div>
+
+                      {/* ISSUE 1 FIX: Primary Category (Strictly 4 Fixed Options) */}
                       <div>
                         <label className="block text-xs font-bold text-gray-700 mb-1.5">
                           Primary Category *
                         </label>
                         <select
                           value={category}
-                          onChange={(e) => setCategory(e.target.value)}
-                          className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2.5 px-3 text-sm focus:outline-hidden focus:border-[#F5820B] focus:bg-white text-[#3B2A20] font-semibold capitalize"
+                          onChange={(e) => {
+                            const newCat = e.target.value;
+                            setCategory(newCat);
+                            setSubcategory(''); // Reset subcategory when main category changes
+                          }}
+                          className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2.5 px-3 text-sm focus:outline-hidden focus:border-[#F5820B] focus:bg-white text-[#3B2A20] font-semibold"
                         >
-                          <option value="men">Men's Collection</option>
-                          <option value="women">Women's Collection</option>
-                          <option value="shoes">Shoes & Footwear</option>
-                          <option value="accessories">Accessories</option>
-                          {dbCategories.map((c) => (
-                            <option key={c.id} value={c.name.toLowerCase()}>{c.name}</option>
+                          {FIXED_CATEGORIES.map((c) => (
+                            <option key={c.id} value={c.id}>{c.name}</option>
                           ))}
                         </select>
                       </div>
                     </div>
 
+                    {/* ISSUE 2 FIX: Subcategory Dropdown Filtered by Main Category */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-xs font-bold text-gray-700 mb-1.5">
@@ -624,39 +631,15 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
                       </div>
                     </div>
 
-                    {/* Image Selection & Preset Picker */}
+                    {/* ISSUE 3 & 4 FIX: File Upload Zone Only (Real Photos Only, Presets Deleted) */}
                     <div>
                       <label className="block text-xs font-bold text-gray-700 mb-1.5">
                         Upload Product Images *
                       </label>
 
-                      {/* Quick 1-Click Catalog Image Presets */}
-                      <div className="mb-3">
-                        <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block mb-1.5">
-                          Or Select Catalog Image Preset:
-                        </span>
-                        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                          {PRESET_CATALOG_IMAGES.map((preset, idx) => (
-                            <button
-                              type="button"
-                              key={idx}
-                              onClick={() => selectPresetImage(preset.url)}
-                              className="h-16 rounded-lg border border-gray-200 overflow-hidden relative group hover:border-[#F5820B] transition-colors focus:ring-2 focus:ring-[#F5820B]"
-                              title={preset.name}
-                            >
-                              <img src={preset.url} alt={preset.name} className="h-full w-full object-cover group-hover:scale-105 transition-transform" />
-                              <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-colors flex items-end p-1">
-                                <span className="text-[9px] font-bold text-white leading-tight truncate">{preset.name.split(' ')[1] || preset.name}</span>
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* File Upload Zone */}
                       <div
                         onClick={() => imageInputRef.current?.click()}
-                        className="border-2 border-dashed border-gray-300 hover:border-[#F5820B] rounded-xl p-5 text-center cursor-pointer transition-colors bg-gray-50 flex flex-col items-center justify-center space-y-1 group"
+                        className="border-2 border-dashed border-gray-300 hover:border-[#F5820B] rounded-xl p-6 text-center cursor-pointer transition-colors bg-gray-50 flex flex-col items-center justify-center space-y-1 group"
                         onDragOver={(e) => e.preventDefault()}
                         onDrop={(e) => {
                           e.preventDefault();
@@ -673,14 +656,14 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
                           onChange={handleImagesFileSelect}
                           className="hidden"
                         />
-                        <ImageIcon className="h-7 w-7 text-gray-400 group-hover:text-[#F5820B] transition-colors stroke-[1.5]" />
+                        <ImageIcon className="h-8 w-8 text-gray-400 group-hover:text-[#F5820B] transition-colors stroke-[1.5]" />
                         <span className="text-xs font-semibold text-gray-700 group-hover:text-[#3B2A20]">
                           Drag & drop photos or <span className="text-[#F5820B] underline">browse files</span>
                         </span>
                         <span className="text-[10px] text-gray-400">Supports JPG, PNG, WEBP</span>
                       </div>
 
-                      {/* Display Selected Images List */}
+                      {/* Display Active Image URLs */}
                       {images && (
                         <div className="mt-3 bg-gray-50 border border-gray-200 p-3 rounded-lg">
                           <div className="flex justify-between items-center mb-2 pb-1 border-b border-gray-200">
@@ -692,7 +675,7 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
                           <div className="flex flex-wrap gap-2">
                             {images.split(',').map((imgUrl, index) => (
                               <div key={index} className="h-14 w-12 border border-gray-200 rounded-lg relative overflow-hidden bg-gray-100 shrink-0 shadow-2xs">
-                                <img src={imgUrl.startsWith('http') ? imgUrl : 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80'} className="h-full w-full object-cover" alt="preview" />
+                                <img src={imgUrl} className="h-full w-full object-cover" alt="preview" />
                               </div>
                             ))}
                           </div>

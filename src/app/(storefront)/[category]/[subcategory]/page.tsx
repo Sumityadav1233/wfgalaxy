@@ -1,5 +1,6 @@
 import React from 'react';
 import { createClient } from '@/lib/supabase/server';
+import prisma from '@/lib/db';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import CategoryClient from '../CategoryClient';
@@ -13,12 +14,35 @@ export default async function SubcategoryPage({ params }: { params: Promise<{ ca
   
   const supabase = await createClient();
   
-  const { data: products } = await supabase
-    .from('products')
-    .select('*')
-    .ilike('category', categoryName)
-    .ilike('subcategory', subcategoryName)
-    .order('created_at', { ascending: false });
+  let products: any[] = [];
+
+  try {
+    const { data: supaProds } = await supabase
+      .from('products')
+      .select('*')
+      .ilike('category', categoryName)
+      .ilike('subcategory', subcategoryName)
+      .order('created_at', { ascending: false });
+
+    if (supaProds && supaProds.length > 0) {
+      products = supaProds;
+    } else {
+      const prismaProds = await prisma.product.findMany({
+        where: {
+          category: { contains: categoryName.toLowerCase() },
+          subcategory: { contains: subcategoryName.toLowerCase() },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+      if (prismaProds && prismaProds.length > 0) {
+        products = prismaProds;
+      }
+    }
+  } catch (err) {
+    console.error('Subcategory fetch error:', err);
+  }
+
+  console.log("Products fetched for subcategory:", categoryName, subcategoryName, "Count:", products.length);
 
   const displayCat = categoryName.charAt(0).toUpperCase() + categoryName.slice(1);
   const displaySub = subcategoryName.charAt(0).toUpperCase() + subcategoryName.slice(1);
