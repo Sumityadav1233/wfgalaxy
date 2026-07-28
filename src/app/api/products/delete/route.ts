@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import { createClient } from '@/lib/supabase/server';
+import { revalidatePath } from 'next/cache';
 
 export async function POST(req: NextRequest) {
   try {
@@ -39,6 +40,9 @@ export async function POST(req: NextRequest) {
     } catch (prismaErr) {
       console.warn('Prisma delete error notice:', prismaErr);
     }
+
+    // Revalidate all storefront ISR pages
+    revalidatePath('/', 'layout');
 
     // Return success response if deleted from at least one store or acknowledged
     return NextResponse.json(deletedProduct || { id, success: true });

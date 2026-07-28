@@ -8,17 +8,21 @@ import { Plus, Loader2, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 
 const CORE_CATEGORIES = ['Men', 'Women', 'Shoes', 'Accessories'];
+const DEFAULT_CATS = [
+  { id: 'cat_men', name: 'Men' },
+  { id: 'cat_women', name: 'Women' },
+  { id: 'cat_shoes', name: 'Shoes' },
+  { id: 'cat_acc', name: 'Accessories' },
+];
 
 export default function AdminCategoriesPage() {
-  const [categories, setCategories] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>(DEFAULT_CATS);
   const [subcategories, setSubcategories] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
   const [newSubcategoryName, setNewSubcategoryName] = useState('');
-  const [selectedCategoryId, setSelectedCategoryId] = useState('');
+  const [selectedCategoryId, setSelectedCategoryId] = useState('cat_men');
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const supabase = createClient();
 
   useEffect(() => {
     fetchData();
@@ -26,35 +30,41 @@ export default function AdminCategoriesPage() {
 
   async function fetchData() {
     setIsLoading(true);
-    
-    // 1. Fetch categories
-    let { data: cats } = await supabase.from('categories').select('*').order('name');
-    
-    // 2. Ensure core categories exist (Auto-seed if missing)
-    if (cats) {
-      const existingNames = cats.map(c => c.name.toLowerCase());
-      const missing = CORE_CATEGORIES.filter(core => !existingNames.includes(core.toLowerCase()));
+    try {
+      const supabase = createClient();
       
-      if (missing.length > 0) {
-        // Insert missing core categories
-        const toInsert = missing.map(name => ({ name }));
-        const { data: newCats } = await supabase.from('categories').insert(toInsert).select();
-        if (newCats) {
-          cats = [...cats, ...newCats].sort((a, b) => a.name.localeCompare(b.name));
-        }
-      }
-    }
+      // 1. Fetch categories
+      let { data: cats, error: catErr } = await supabase.from('categories').select('*').order('name');
+      
+      if (catErr) console.warn('Supabase categories fetch notice:', catErr.message);
 
-    // 3. Fetch subcategories
-    const { data: subs } = await supabase.from('subcategories').select('*, categories(name)').order('name');
-    
-    if (cats) setCategories(cats);
-    if (subs) setSubcategories(subs);
-    
-    if (cats && cats.length > 0 && !selectedCategoryId) {
-      setSelectedCategoryId(cats[0].id);
+      // 2. Ensure core categories exist
+      if (cats && cats.length > 0) {
+        const existingNames = cats.map(c => c.name.toLowerCase());
+        const missing = CORE_CATEGORIES.filter(core => !existingNames.includes(core.toLowerCase()));
+        
+        if (missing.length > 0) {
+          const toInsert = missing.map(name => ({ name }));
+          const { data: newCats } = await supabase.from('categories').insert(toInsert).select();
+          if (newCats) {
+            cats = [...cats, ...newCats].sort((a, b) => a.name.localeCompare(b.name));
+          }
+        }
+        setCategories(cats);
+        if (!selectedCategoryId) setSelectedCategoryId(cats[0].id);
+      } else {
+        setCategories(DEFAULT_CATS);
+      }
+
+      // 3. Fetch subcategories
+      const { data: subs } = await supabase.from('subcategories').select('*, categories(name)').order('name');
+      if (subs) setSubcategories(subs);
+    } catch (err) {
+      console.error('Error loading categories:', err);
+      setCategories(DEFAULT_CATS);
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   }
 
   const handleAddSubcategory = async (e: React.FormEvent) => {

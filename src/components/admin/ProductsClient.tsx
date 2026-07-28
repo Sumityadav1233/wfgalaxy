@@ -185,23 +185,48 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
     setImagesProgress(30);
     setUploadedImageNames((prev) => [...prev, ...validImages.map((f) => f.name)]);
 
+    const uploadedUrls: string[] = [];
+
     try {
-      const readAsDataUrl = (file: File): Promise<string> => {
-        return new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = () => resolve('');
-          reader.readAsDataURL(file);
-        });
-      };
+      const supabase = createClient();
 
-      const dataUrls = await Promise.all(validImages.map(readAsDataUrl));
-      const validUrls = dataUrls.filter(Boolean);
+      for (const file of validImages) {
+        try {
+          const fileExt = file.name.split('.').pop() || 'jpg';
+          const fileName = `products/${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
+          
+          const { data, error } = await supabase.storage
+            .from('product-images')
+            .upload(fileName, file, { upsert: true });
 
-      console.log("Uploaded image URL:", validUrls);
+          if (!error && data) {
+            const { data: { publicUrl } } = supabase.storage
+              .from('product-images')
+              .getPublicUrl(data.path);
+            
+            console.log("Uploaded URL:", publicUrl);
+            console.log("Saving to DB:", { image_url: publicUrl });
+            uploadedUrls.push(publicUrl);
+          } else {
+            // Storage bucket missing/unauthorized fallback to FileReader
+            const dataUrl = await new Promise<string>((resolve) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result as string);
+              reader.onerror = () => resolve('');
+              reader.readAsDataURL(file);
+            });
+            if (dataUrl) {
+              console.log("Uploaded Data URL (FileReader):", dataUrl.substring(0, 50) + "...");
+              uploadedUrls.push(dataUrl);
+            }
+          }
+        } catch (fileErr) {
+          console.warn("Single image upload notice:", fileErr);
+        }
+      }
 
-      if (validUrls.length > 0) {
-        const joined = validUrls.join(',');
+      if (uploadedUrls.length > 0) {
+        const joined = uploadedUrls.join(',');
         setImages((prevImgs) => (prevImgs ? `${prevImgs},${joined}` : joined));
       }
     } catch (err) {
