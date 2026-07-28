@@ -318,10 +318,22 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
 
       if (editingProduct) {
         // Direct Supabase update
-        await supabase.from('products').update(payload).eq('id', editingProduct.id);
-        const numId = Number(editingProduct.id);
-        if (!isNaN(numId)) {
-          await supabase.from('products').update(payload).eq('id', numId);
+        let { data: updatedSb, error: sbErr } = await supabase
+          .from('products')
+          .update(payload)
+          .eq('id', editingProduct.id)
+          .select()
+          .single();
+
+        if (sbErr) {
+          const minimalPayload = {
+            name: payload.name,
+            description: payload.description,
+            price: payload.price,
+            category: payload.category,
+            subcategory: payload.subcategory,
+          };
+          await supabase.from('products').update(minimalPayload).eq('id', editingProduct.id);
         }
 
         // API update
@@ -336,13 +348,35 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
         alert('Product updated successfully!');
       } else {
         // Direct Supabase insert
-        const { data: createdSb, error: sbErr } = await supabase
+        let { data: createdSb, error: sbErr } = await supabase
           .from('products')
           .insert([payload])
           .select()
           .single();
 
-        if (sbErr) console.warn('Supabase direct insert notice:', sbErr.message);
+        if (sbErr) {
+          console.warn('Full payload insert error:', sbErr.message);
+          // Fallback to minimal payload (name, description, price, category, subcategory)
+          const minimalPayload = {
+            name: payload.name,
+            description: payload.description,
+            price: payload.price,
+            category: payload.category,
+            subcategory: payload.subcategory,
+          };
+          const { data: minData, error: minErr } = await supabase
+            .from('products')
+            .insert([minimalPayload])
+            .select()
+            .single();
+
+          if (minData && !minErr) {
+            createdSb = minData;
+          } else if (minErr) {
+            console.error('Minimal payload insert error:', minErr.message);
+            alert('Supabase Insert Warning: ' + minErr.message);
+          }
+        }
 
         // API insert
         const res = await fetch('/api/products', {
