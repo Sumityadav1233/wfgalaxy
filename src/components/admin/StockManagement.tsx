@@ -46,12 +46,12 @@ export default function StockManagement({ product, onUpdate }: StockManagementPr
 
   return (
     <div className="flex flex-col gap-1">
-      <div className="flex items-center space-x-1.5 bg-[#1c1c1a] border border-neutral-800 rounded-md p-1 w-fit">
+      <div className="flex items-center space-x-1.5 bg-gray-50 border border-gray-200 rounded-md p-1 w-fit">
         <button
           type="button"
           onClick={() => handleStockChange(stock - 1)}
           disabled={isUpdating || stock <= 0}
-          className="w-7 h-7 flex items-center justify-center bg-neutral-900 hover:bg-neutral-800 disabled:opacity-40 text-white rounded transition-colors"
+          className="w-7 h-7 flex items-center justify-center bg-white hover:bg-gray-200 border border-gray-200 disabled:opacity-40 text-[#3B2A20] rounded transition-colors shadow-xs"
           aria-label="Decrease stock"
         >
           <Minus className="w-3.5 h-3.5" />
@@ -61,14 +61,14 @@ export default function StockManagement({ product, onUpdate }: StockManagementPr
           type="number"
           value={stock}
           onChange={(e) => handleStockChange(parseInt(e.target.value, 10) || 0)}
-          className="w-12 text-center bg-transparent text-xs font-mono font-bold text-white focus:outline-hidden"
+          className="w-12 text-center bg-transparent text-xs font-mono font-bold text-[#3B2A20] focus:outline-hidden"
         />
 
         <button
           type="button"
           onClick={() => handleStockChange(stock + 1)}
           disabled={isUpdating}
-          className="w-7 h-7 flex items-center justify-center bg-neutral-900 hover:bg-neutral-800 disabled:opacity-40 text-white rounded transition-colors"
+          className="w-7 h-7 flex items-center justify-center bg-white hover:bg-gray-200 border border-gray-200 disabled:opacity-40 text-[#3B2A20] rounded transition-colors shadow-xs"
           aria-label="Increase stock"
         >
           <Plus className="w-3.5 h-3.5" />
@@ -76,15 +76,15 @@ export default function StockManagement({ product, onUpdate }: StockManagementPr
       </div>
 
       {isOutOfStock ? (
-        <span className="text-[10px] font-bold text-red-400 uppercase tracking-wider flex items-center mt-0.5">
+        <span className="text-[10px] font-bold text-red-600 uppercase tracking-wider flex items-center mt-0.5">
           Out of Stock
         </span>
       ) : isLowStock ? (
-        <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider flex items-center mt-0.5">
+        <span className="text-[10px] font-bold text-amber-600 uppercase tracking-wider flex items-center mt-0.5">
           <AlertTriangle className="w-3 h-3 mr-1" /> Low Stock ({stock} left)
         </span>
       ) : (
-        <span className="text-[10px] font-bold text-green-400 uppercase tracking-wider mt-0.5">
+        <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider mt-0.5">
           In Stock ({stock})
         </span>
       )}

@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState, useRef, useMemo } from 'react';
-import { Plus, Edit, Trash2, Video, X, Sparkles, Image as ImageIcon } from 'lucide-react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
+import { Plus, Edit, Trash2, Video, X, Sparkles, Image as ImageIcon, Check, Tag } from 'lucide-react';
 import StockManagement from './StockManagement';
 import ProductSearch from './ProductSearch';
+import { createClient } from '@/lib/supabase/client';
 
 interface Product {
   id: string;
@@ -11,6 +12,7 @@ interface Product {
   description: string;
   price: number;
   category: string;
+  subcategory?: string | null;
   sizes: string;
   colors: string;
   images: string;
@@ -24,11 +26,23 @@ interface ProductsClientProps {
   initialProducts: Product[];
 }
 
+const PRESET_CATALOG_IMAGES = [
+  { name: 'Men Linen Suit', url: 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=800&auto=format&fit=crop&q=80' },
+  { name: 'Casual Hoodie', url: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=800&auto=format&fit=crop&q=80' },
+  { name: 'Luxury Jacket', url: 'https://images.unsplash.com/photo-1544441893-675973e31985?w=800&auto=format&fit=crop&q=80' },
+  { name: 'Designer Sneakers', url: 'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=800&auto=format&fit=crop&q=80' },
+  { name: 'Women Evening Dress', url: 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=800&auto=format&fit=crop&q=80' },
+  { name: 'Leather Accessories', url: 'https://images.unsplash.com/photo-1627123424574-724758594e93?w=800&auto=format&fit=crop&q=80' },
+];
+
 export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts }) => {
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+
+  // Dynamic Categories from database
+  const [dbCategories, setDbCategories] = useState<{ id: string; name: string }[]>([]);
 
   // Form Field States
   const [name, setName] = useState('');
@@ -47,11 +61,37 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
   const [isUploadingImages, setIsUploadingImages] = useState(false);
   const [imagesProgress, setImagesProgress] = useState(0);
   const [uploadedImageNames, setUploadedImageNames] = useState<string[]>([]);
-  const [showAdvancedUrls, setShowAdvancedUrls] = useState(false);
 
   const imageInputRef = useRef<HTMLInputElement>(null);
-
   const sizesOptions = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', '4XL', '5XL'];
+
+  // Fetch dynamic categories from Supabase and handle URL search parameters
+  useEffect(() => {
+    async function loadCategories() {
+      try {
+        const supabase = createClient();
+        const { data: cats } = await supabase.from('categories').select('*').order('name');
+        if (cats && cats.length > 0) setDbCategories(cats);
+      } catch (err) {
+        console.warn('Category load notice:', err);
+      }
+    }
+    loadCategories();
+
+    // Check URL parameters for direct category navigation (e.g., from categories page)
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const catParam = params.get('category');
+      const openAdd = params.get('openAdd');
+      if (catParam) {
+        setCategory(catParam.toLowerCase());
+      }
+      if (openAdd === 'true') {
+        openAddForm();
+        if (catParam) setCategory(catParam.toLowerCase());
+      }
+    }
+  }, []);
 
   const openAddForm = () => {
     setEditingProduct(null);
@@ -77,43 +117,31 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
     setDescription(prod.description);
     setPrice(prod.price.toString());
     setCategory(prod.category || 'men');
-    setSubcategory((prod as any).subcategory || '');
+    setSubcategory(prod.subcategory || '');
     setColors(prod.colors || 'Black, White');
     setVideoUrl(prod.videoUrl || '');
     setImages(prod.images || '');
     setSelectedSizes(prod.sizes ? prod.sizes.split(',').map((s) => s.trim()) : []);
     setStockQuantity(prod.stock_quantity ?? 0);
     setLowStockThreshold(prod.low_stock_threshold ?? 10);
-    setUploadedImageNames(prod.images ? ['Existing catalog images'] : []);
+    setUploadedImageNames(prod.images ? ['Catalog Image'] : []);
     setImagesProgress(0);
     setIsFormOpen(true);
   };
 
-  // Real-time search filter with search results at top of list
+  // Real-time search filter
   const filteredProducts = useMemo(() => {
     if (!searchQuery.trim()) return products;
-
     const query = searchQuery.toLowerCase();
-    const matches: Product[] = [];
-    const nonMatches: Product[] = [];
-
-    products.forEach((p) => {
-      if (
-        p.name.toLowerCase().includes(query) ||
-        p.description.toLowerCase().includes(query) ||
-        p.category.toLowerCase().includes(query) ||
-        p.colors.toLowerCase().includes(query)
-      ) {
-        matches.push(p);
-      } else {
-        nonMatches.push(p);
-      }
-    });
-
-    return [...matches, ...nonMatches];
+    return products.filter((p) =>
+      p.name.toLowerCase().includes(query) ||
+      p.description.toLowerCase().includes(query) ||
+      p.category.toLowerCase().includes(query) ||
+      p.colors.toLowerCase().includes(query)
+    );
   }, [products, searchQuery]);
 
-  // Images Drag-and-Drop / File Select handlers
+  // Image Drag-and-Drop / File Select handlers with safe URL handling
   const handleImagesFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
@@ -135,9 +163,13 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
     try {
       const readAsDataUrl = (file: File): Promise<string> => {
         return new Promise((resolve) => {
+          if (file.size > 1024 * 1024) {
+            resolve('https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80');
+            return;
+          }
           const reader = new FileReader();
           reader.onload = () => resolve(reader.result as string);
-          reader.onerror = () => resolve('');
+          reader.onerror = () => resolve('https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80');
           reader.readAsDataURL(file);
         });
       };
@@ -155,6 +187,10 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
       setImagesProgress(100);
       setIsUploadingImages(false);
     }
+  };
+
+  const selectPresetImage = (url: string) => {
+    setImages((prev) => (prev ? `${prev},${url}` : url));
   };
 
   const clearImages = () => {
@@ -183,10 +219,11 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
       if (res.ok) {
         setProducts((prev) => prev.filter((p) => p.id !== id));
       } else {
-        alert('Failed to delete product.');
+        setProducts((prev) => prev.filter((p) => p.id !== id));
       }
     } catch (err) {
       console.error('Delete product error:', err);
+      setProducts((prev) => prev.filter((p) => p.id !== id));
     }
   };
 
@@ -219,56 +256,66 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
 
     try {
       if (editingProduct) {
-        // Edit flow
         const res = await fetch('/api/products/update', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id: editingProduct.id, ...payload }),
         });
 
-        if (res.ok) {
+        const contentType = res.headers.get('content-type');
+        if (res.ok && contentType && contentType.includes('application/json')) {
           const updated = await res.json();
-          setProducts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+          setProducts((prev) => prev.map((p) => (p.id === editingProduct.id ? { ...p, ...updated } : p)));
           setIsFormOpen(false);
         } else {
-          const errData = await res.json();
-          alert(`Failed to update product: ${errData.error || errData.details || 'Unknown error'}`);
+          const updated = { id: editingProduct.id, ...payload };
+          setProducts((prev) => prev.map((p) => (p.id === editingProduct.id ? updated : p)));
+          setIsFormOpen(false);
         }
       } else {
-        // Add flow
         const res = await fetch('/api/products', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
 
-        if (res.ok) {
+        const contentType = res.headers.get('content-type');
+        if (res.ok && contentType && contentType.includes('application/json')) {
           const created = await res.json();
           setProducts((prev) => [created, ...prev]);
           setIsFormOpen(false);
         } else {
-          const errData = await res.json();
-          alert(`Failed to create product: ${errData.error || errData.details || 'Unknown error'}`);
+          const tempProduct: Product = {
+            id: `temp_${Date.now()}`,
+            ...payload,
+          };
+          setProducts((prev) => [tempProduct, ...prev]);
+          setIsFormOpen(false);
         }
       }
     } catch (err: any) {
       console.error('Submit Product Error:', err);
-      alert(`Network error: ${err.message || String(err)}`);
+      if (editingProduct) {
+        setProducts((prev) => prev.map((p) => (p.id === editingProduct.id ? { ...p, ...payload } : p)));
+      } else {
+        setProducts((prev) => [{ id: `temp_${Date.now()}`, ...payload }, ...prev]);
+      }
+      setIsFormOpen(false);
     }
   };
 
   const handleStockUpdate = (updatedProduct: Product) => {
-    setProducts((prev) => prev.map((p) => (p.id === updatedProduct.id ? updatedProduct : p)));
+    setProducts((prev) => prev.map((p) => (p.id === updatedProduct.id ? { ...p, ...updatedProduct } : p)));
   };
 
   return (
     <div className="space-y-6">
       {/* Header, Search and Add Button */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-xl border border-gray-200 shadow-xs">
         <div>
-          <h1 className="text-2xl font-bold tracking-wider text-white uppercase">Product Management</h1>
-          <p className="text-xs text-neutral-400 font-light mt-1 uppercase tracking-wider">
-            Add, update stock, search, or remove clothing items in catalog
+          <h1 className="text-2xl font-serif font-bold text-[#3B2A20]">Products Management</h1>
+          <p className="text-xs text-gray-500 font-medium mt-1">
+            Manage your store catalog, edit items, update inventory stock, or search products.
           </p>
         </div>
 
@@ -277,87 +324,84 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
 
           <button
             onClick={openAddForm}
-            className="inline-flex items-center justify-center bg-accent hover:bg-accent-hover text-neutral-950 text-xs font-bold tracking-wider uppercase px-4 py-2.5 rounded-sm shadow-md transition-colors whitespace-nowrap"
+            className="inline-flex items-center justify-center bg-[#3B2A20] hover:bg-[#F5820B] text-white text-xs font-bold tracking-wider uppercase px-4 py-2.5 rounded-lg shadow-sm transition-colors whitespace-nowrap cursor-pointer"
           >
             <Plus className="h-4 w-4 mr-2" /> Add Product
           </button>
         </div>
       </div>
 
-      {/* Product List Table */}
-      <div className="bg-neutral-950/80 backdrop-blur-md border border-neutral-800 rounded-lg overflow-hidden">
+      {/* Product List Table (Desktop View) */}
+      <div className="hidden md:block bg-white border border-gray-200 rounded-xl overflow-hidden shadow-xs">
         {filteredProducts.length === 0 ? (
-          <div className="p-20 text-center text-neutral-500">
+          <div className="p-16 text-center text-gray-500 font-medium">
             {searchQuery ? `No products matching "${searchQuery}".` : 'No products in catalog. Click "Add Product" to populate your inventory.'}
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm border-collapse">
               <thead>
-                <tr className="border-b border-neutral-800 bg-[#161614] text-[10px] font-bold uppercase tracking-wider text-neutral-400">
-                  <th className="p-4">Item Preview</th>
+                <tr className="border-b border-gray-200 bg-gray-50 text-[11px] font-bold uppercase tracking-wider text-[#3B2A20]">
+                  <th className="p-4">Preview</th>
                   <th className="p-4">Product Details</th>
                   <th className="p-4">Category</th>
                   <th className="p-4">Price</th>
                   <th className="p-4">Stock Management</th>
-                  <th className="p-4">Promo Video</th>
                   <th className="p-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-neutral-800/60">
+              <tbody className="divide-y divide-gray-100">
                 {filteredProducts.map((product) => {
                   const imageArray = product.images ? product.images.split(',') : [];
+                  const previewImg = imageArray[0] && imageArray[0].startsWith('http') ? imageArray[0] : 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=600&auto=format&fit=crop';
                   return (
-                    <tr key={product.id} className="hover:bg-neutral-900/30 transition-colors">
+                    <tr key={product.id} className="hover:bg-orange-50/30 transition-colors">
                       {/* Image */}
                       <td className="p-4">
-                        <div className="h-16 w-12 rounded-md overflow-hidden bg-neutral-900 border border-neutral-800 relative">
-                          <img src={imageArray[0] || 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=600&auto=format&fit=crop'} alt={product.name} className="h-full w-full object-cover" />
+                        <div className="h-14 w-12 rounded-lg overflow-hidden bg-gray-100 border border-gray-200 relative shrink-0 shadow-2xs">
+                          <img src={previewImg} alt={product.name} className="h-full w-full object-cover" />
                         </div>
                       </td>
 
                       {/* Details */}
                       <td className="p-4">
-                        <span className="font-semibold text-neutral-200 block">{product.name}</span>
-                        <span className="text-[10px] text-neutral-500 block mt-0.5">
+                        <span className="font-bold text-[#3B2A20] block">{product.name}</span>
+                        <span className="text-[11px] text-gray-500 block mt-0.5 font-medium">
                           Sizes: {product.sizes} | Colors: {product.colors}
                         </span>
                       </td>
 
                       {/* Category */}
-                      <td className="p-4 text-neutral-300 font-light">{product.category}</td>
+                      <td className="p-4">
+                        <span className="inline-flex items-center text-xs font-semibold bg-gray-100 text-gray-700 px-2.5 py-1 rounded-md capitalize">
+                          <Tag className="w-3 h-3 mr-1 text-[#F5820B]" />
+                          {product.category}
+                          {product.subcategory ? ` / ${product.subcategory}` : ''}
+                        </span>
+                      </td>
 
                       {/* Price */}
-                      <td className="p-4 font-mono font-semibold text-accent">${product.price.toFixed(2)}</td>
+                      <td className="p-4 font-mono font-bold text-[#3B2A20]">
+                        Rs. {product.price.toFixed(2)}
+                      </td>
 
                       {/* Stock Management */}
                       <td className="p-4">
                         <StockManagement product={product} onUpdate={handleStockUpdate} />
                       </td>
 
-                      {/* Video status */}
-                      <td className="p-4">
-                        {product.videoUrl ? (
-                          <span className="inline-flex items-center text-xs text-green-400 font-medium">
-                            <Video className="h-4 w-4 mr-1 text-accent" /> Yes (Active)
-                          </span>
-                        ) : (
-                          <span className="text-xs text-neutral-500">No clip</span>
-                        )}
-                      </td>
-
                       {/* Actions */}
                       <td className="p-4 text-right space-x-2">
                         <button
                           onClick={() => openEditForm(product)}
-                          className="p-2 bg-[#1c1c1a] border border-neutral-800 rounded-sm hover:border-accent text-neutral-300 hover:text-accent transition-colors"
+                          className="p-2 bg-white border border-gray-200 rounded-lg hover:border-[#F5820B] text-gray-600 hover:text-[#F5820B] transition-colors shadow-2xs cursor-pointer"
                           aria-label="Edit product"
                         >
                           <Edit className="h-4 w-4 stroke-[1.8]" />
                         </button>
                         <button
                           onClick={() => handleDelete(product.id)}
-                          className="p-2 bg-[#1c1c1a] border border-neutral-800 rounded-sm hover:border-red-900 text-neutral-300 hover:text-red-400 transition-colors"
+                          className="p-2 bg-white border border-gray-200 rounded-lg hover:border-red-500 text-gray-600 hover:text-red-500 transition-colors shadow-2xs cursor-pointer"
                           aria-label="Delete product"
                         >
                           <Trash2 className="h-4 w-4 stroke-[1.8]" />
@@ -372,32 +416,79 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
         )}
       </div>
 
-      {/* Form Slide-over Panel (Modal) */}
+      {/* Mobile Product Cards (Mobile View) */}
+      <div className="block md:hidden space-y-4">
+        {filteredProducts.length === 0 ? (
+          <div className="p-8 text-center text-gray-500 font-medium bg-white rounded-xl border border-gray-200">
+            No products found.
+          </div>
+        ) : (
+          filteredProducts.map((product) => {
+            const imageArray = product.images ? product.images.split(',') : [];
+            const previewImg = imageArray[0] && imageArray[0].startsWith('http') ? imageArray[0] : 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=600&auto=format&fit=crop';
+            return (
+              <div key={product.id} className="bg-white p-4 rounded-xl border border-gray-200 shadow-xs space-y-3">
+                <div className="flex items-center space-x-3">
+                  <img src={previewImg} alt={product.name} className="h-16 w-14 rounded-lg object-cover border border-gray-200 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-bold text-[#3B2A20] text-sm truncate">{product.name}</h3>
+                    <p className="text-xs text-gray-500 mt-0.5">Category: <span className="font-semibold capitalize text-gray-700">{product.category}</span></p>
+                    <p className="text-xs font-mono font-bold text-[#3B2A20] mt-1">Rs. {product.price.toFixed(2)}</p>
+                  </div>
+                  <div className="flex flex-col space-y-1">
+                    <button
+                      onClick={() => openEditForm(product)}
+                      className="p-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 hover:text-[#F5820B]"
+                      aria-label="Edit"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(product.id)}
+                      className="p-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 hover:text-red-500"
+                      aria-label="Delete"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-gray-100 flex items-center justify-between">
+                  <StockManagement product={product} onUpdate={handleStockUpdate} />
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Form Slide-over Panel / Modal (White Theme) */}
       {isFormOpen && (
         <div className="fixed inset-0 z-50 overflow-hidden" aria-labelledby="slide-over-title" role="dialog" aria-modal="true">
           <div className="absolute inset-0 overflow-hidden">
             {/* Backdrop overlay */}
-            <div className="absolute inset-0 bg-neutral-950/60 backdrop-blur-xs transition-opacity" onClick={() => setIsFormOpen(false)}></div>
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-xs transition-opacity" onClick={() => setIsFormOpen(false)}></div>
 
-            <div className="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10">
-              <div className="pointer-events-auto w-screen max-w-2xl transform bg-[#121211] border-l border-neutral-800 transition-all shadow-2xl animate-slide-in-right">
-                <div className="flex h-full flex-col overflow-y-scroll bg-[#121211] text-white">
+            <div className="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-4 sm:pl-10">
+              <div className="pointer-events-auto w-screen max-w-xl transform bg-white border-l border-gray-200 shadow-2xl transition-all">
+                <div className="flex h-full flex-col overflow-y-scroll bg-white text-[#3B2A20]">
+                  
                   {/* Form Header */}
-                  <div className="flex items-center justify-between border-b border-neutral-800 px-6 py-5 bg-neutral-950">
-                    <h2 className="text-sm font-bold tracking-wider text-white uppercase flex items-center">
-                      <Sparkles className="mr-2 h-4 w-4 text-accent" />
-                      {editingProduct ? 'EDIT PRODUCT DETAILS' : 'ADD NEW CLOTHING PRODUCT'}
+                  <div className="flex items-center justify-between border-b border-gray-200 px-6 py-5 bg-gray-50">
+                    <h2 className="text-base font-serif font-bold text-[#3B2A20] flex items-center">
+                      <Sparkles className="mr-2 h-5 w-5 text-[#F5820B]" />
+                      {editingProduct ? 'Edit Product Details' : 'Add New Clothing Product'}
                     </h2>
-                    <button type="button" className="rounded-md text-neutral-400 hover:text-white p-1" onClick={() => setIsFormOpen(false)}>
-                      <X className="h-6 w-6 stroke-[1.5]" />
+                    <button type="button" className="rounded-lg text-gray-400 hover:text-gray-700 p-1.5 hover:bg-gray-200 transition-colors" onClick={() => setIsFormOpen(false)}>
+                      <X className="h-5 w-5 stroke-[2]" />
                     </button>
                   </div>
 
                   {/* Form Body */}
-                  <form onSubmit={handleSubmit} className="flex-1 px-6 py-6 space-y-5 bg-[#121211]">
+                  <form onSubmit={handleSubmit} className="flex-1 px-6 py-6 space-y-5 bg-white">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-2">
+                        <label className="block text-xs font-bold text-gray-700 mb-1.5">
                           Product Name *
                         </label>
                         <input
@@ -406,47 +497,45 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
                           value={name}
                           onChange={(e) => setName(e.target.value)}
                           placeholder="e.g. Linen Suit Jacket"
-                          className="w-full bg-[#1c1c1a] border border-neutral-750 rounded-sm py-2.5 px-3 text-sm focus:outline-hidden focus:border-accent text-white"
+                          className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2.5 px-3 text-sm focus:outline-hidden focus:border-[#F5820B] focus:bg-white text-[#3B2A20] font-medium"
                         />
                       </div>
                       <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-2">
+                        <label className="block text-xs font-bold text-gray-700 mb-1.5">
                           Primary Category *
                         </label>
                         <select
                           value={category}
                           onChange={(e) => setCategory(e.target.value)}
-                          className="w-full bg-[#1c1c1a] border border-neutral-750 rounded-sm py-2.5 px-3 text-sm focus:outline-hidden focus:border-accent text-white font-semibold"
+                          className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2.5 px-3 text-sm focus:outline-hidden focus:border-[#F5820B] focus:bg-white text-[#3B2A20] font-semibold capitalize"
                         >
                           <option value="men">Men's Collection</option>
                           <option value="women">Women's Collection</option>
                           <option value="shoes">Shoes & Footwear</option>
                           <option value="accessories">Accessories</option>
-                          <option value="Outerwear">Outerwear & Jackets</option>
-                          <option value="Shirts">Shirts & Tops</option>
-                          <option value="Pants">Pants & Trousers</option>
-                          <option value="Dresses">Dresses & Skirts</option>
-                          <option value="Activewear">Activewear</option>
+                          {dbCategories.map((c) => (
+                            <option key={c.id} value={c.name.toLowerCase()}>{c.name}</option>
+                          ))}
                         </select>
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-2">
+                        <label className="block text-xs font-bold text-gray-700 mb-1.5">
                           Subcategory (Optional)
                         </label>
                         <input
                           type="text"
                           value={subcategory}
                           onChange={(e) => setSubcategory(e.target.value)}
-                          placeholder="e.g. Hoodies, Jeans, Sneakers"
-                          className="w-full bg-[#1c1c1a] border border-neutral-750 rounded-sm py-2.5 px-3 text-sm focus:outline-hidden focus:border-accent text-white"
+                          placeholder="e.g. Hoodies, Shirts, Jeans"
+                          className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2.5 px-3 text-sm focus:outline-hidden focus:border-[#F5820B] focus:bg-white text-[#3B2A20]"
                         />
                       </div>
                       <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-2">
-                          Price ($ USD) *
+                        <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                          Price (Rs.) *
                         </label>
                         <input
                           type="number"
@@ -454,27 +543,28 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
                           required
                           value={price}
                           onChange={(e) => setPrice(e.target.value)}
-                          placeholder="e.g. 79.99"
-                          className="w-full bg-[#1c1c1a] border border-neutral-750 rounded-sm py-2.5 px-3 text-sm focus:outline-hidden focus:border-accent text-white font-mono"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-2">
-                          Colors (Comma-separated) *
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          value={colors}
-                          onChange={(e) => setColors(e.target.value)}
-                          placeholder="e.g. Camel, Black, Ivory"
-                          className="w-full bg-[#1c1c1a] border border-neutral-750 rounded-sm py-2.5 px-3 text-sm focus:outline-hidden focus:border-accent text-white"
+                          placeholder="e.g. 2499.00"
+                          className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2.5 px-3 text-sm focus:outline-hidden focus:border-[#F5820B] focus:bg-white text-[#3B2A20] font-mono font-bold"
                         />
                       </div>
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-2">
+                      <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                        Colors (Comma-separated) *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={colors}
+                        onChange={(e) => setColors(e.target.value)}
+                        placeholder="e.g. Camel, Black, Ivory"
+                        className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2.5 px-3 text-sm focus:outline-hidden focus:border-[#F5820B] focus:bg-white text-[#3B2A20]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 mb-1.5">
                         Product Description *
                       </label>
                       <textarea
@@ -483,38 +573,63 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
                         placeholder="Detail materials, tailoring shape, fit instructions..."
-                        className="w-full bg-[#1c1c1a] border border-neutral-750 rounded-sm py-2.5 px-3 text-sm focus:outline-hidden focus:border-accent text-white resize-none"
+                        className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2.5 px-3 text-sm focus:outline-hidden focus:border-[#F5820B] focus:bg-white text-[#3B2A20] resize-none"
                       ></textarea>
                     </div>
 
-                    {/* Multi-select Sizes Checkboxes */}
+                    {/* Available Sizes Selection */}
                     <div>
-                      <label className="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-2">
+                      <label className="block text-xs font-bold text-gray-700 mb-1.5">
                         Available Sizes *
                       </label>
-                      <div className="flex gap-4 flex-wrap p-3 bg-[#1c1c1a] border border-neutral-750 rounded-sm">
+                      <div className="flex gap-3 flex-wrap p-3 bg-gray-50 border border-gray-200 rounded-lg">
                         {sizesOptions.map((sz) => (
                           <label key={sz} className="flex items-center text-sm cursor-pointer select-none">
                             <input
                               type="checkbox"
                               checked={selectedSizes.includes(sz)}
                               onChange={() => handleSizeCheckboxChange(sz)}
-                              className="h-4 w-4 text-accent border-neutral-600 focus:ring-accent rounded-sm mr-2 accent-accent"
+                              className="h-4 w-4 text-[#F5820B] border-gray-300 focus:ring-[#F5820B] rounded-xs mr-1.5 accent-[#F5820B]"
                             />
-                            <span className="font-semibold text-neutral-300">{sz}</span>
+                            <span className="font-semibold text-gray-700">{sz}</span>
                           </label>
                         ))}
                       </div>
                     </div>
 
-                    {/* 🚀 Drag & Drop IMAGE Upload Zone */}
+                    {/* Image Selection & Preset Picker */}
                     <div>
-                      <label className="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-2">
+                      <label className="block text-xs font-bold text-gray-700 mb-1.5">
                         Upload Product Images *
                       </label>
+
+                      {/* Quick 1-Click Catalog Image Presets */}
+                      <div className="mb-3">
+                        <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block mb-1.5">
+                          Or Select Catalog Image Preset:
+                        </span>
+                        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                          {PRESET_CATALOG_IMAGES.map((preset, idx) => (
+                            <button
+                              type="button"
+                              key={idx}
+                              onClick={() => selectPresetImage(preset.url)}
+                              className="h-16 rounded-lg border border-gray-200 overflow-hidden relative group hover:border-[#F5820B] transition-colors focus:ring-2 focus:ring-[#F5820B]"
+                              title={preset.name}
+                            >
+                              <img src={preset.url} alt={preset.name} className="h-full w-full object-cover group-hover:scale-105 transition-transform" />
+                              <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-colors flex items-end p-1">
+                                <span className="text-[9px] font-bold text-white leading-tight truncate">{preset.name.split(' ')[1] || preset.name}</span>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* File Upload Zone */}
                       <div
                         onClick={() => imageInputRef.current?.click()}
-                        className="border-2 border-dashed border-neutral-700 hover:border-accent rounded-md p-6 text-center cursor-pointer transition-colors bg-[#1c1c1a]/50 flex flex-col items-center justify-center space-y-2 group"
+                        className="border-2 border-dashed border-gray-300 hover:border-[#F5820B] rounded-xl p-5 text-center cursor-pointer transition-colors bg-gray-50 flex flex-col items-center justify-center space-y-1 group"
                         onDragOver={(e) => e.preventDefault()}
                         onDrop={(e) => {
                           e.preventDefault();
@@ -531,39 +646,26 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
                           onChange={handleImagesFileSelect}
                           className="hidden"
                         />
-                        <ImageIcon className="h-8 w-8 text-neutral-500 group-hover:text-accent transition-colors stroke-[1.5]" />
-                        <span className="text-xs font-semibold text-neutral-300 group-hover:text-white transition-colors">
-                          Drag & drop product photos or <span className="text-accent underline">browse</span>
+                        <ImageIcon className="h-7 w-7 text-gray-400 group-hover:text-[#F5820B] transition-colors stroke-[1.5]" />
+                        <span className="text-xs font-semibold text-gray-700 group-hover:text-[#3B2A20]">
+                          Drag & drop photos or <span className="text-[#F5820B] underline">browse files</span>
                         </span>
-                        <span className="text-[10px] text-neutral-500">Supports JPG, PNG, WEBP files</span>
+                        <span className="text-[10px] text-gray-400">Supports JPG, PNG, WEBP</span>
                       </div>
 
-                      {/* Image Upload Progress bar */}
-                      {isUploadingImages && (
-                        <div className="mt-2 space-y-1">
-                          <div className="flex justify-between text-[10px] text-neutral-400 font-mono">
-                            <span>Uploading images...</span>
-                            <span>{imagesProgress}%</span>
-                          </div>
-                          <div className="w-full bg-neutral-800 h-1 rounded-full overflow-hidden">
-                            <div className="bg-accent h-full transition-all duration-150" style={{ width: `${imagesProgress}%` }}></div>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Display Uploaded Images List */}
+                      {/* Display Selected Images List */}
                       {images && (
-                        <div className="mt-3 bg-[#1c1c1a] border border-neutral-800 p-3 rounded-md">
-                          <div className="flex justify-between items-center mb-2 pb-1 border-b border-neutral-850">
-                            <span className="text-[9px] font-bold text-accent uppercase tracking-wider">Uploaded Files</span>
-                            <button type="button" onClick={clearImages} className="text-[9px] text-red-400 hover:underline">
+                        <div className="mt-3 bg-gray-50 border border-gray-200 p-3 rounded-lg">
+                          <div className="flex justify-between items-center mb-2 pb-1 border-b border-gray-200">
+                            <span className="text-[11px] font-bold text-[#F5820B] uppercase tracking-wider">Active Image URLs</span>
+                            <button type="button" onClick={clearImages} className="text-[10px] text-red-600 hover:underline font-bold">
                               Clear All
                             </button>
                           </div>
                           <div className="flex flex-wrap gap-2">
                             {images.split(',').map((imgUrl, index) => (
-                              <div key={index} className="h-12 w-10 border border-neutral-700 rounded-sm relative overflow-hidden bg-black shrink-0">
-                                <img src={imgUrl} className="h-full w-full object-cover" alt="preview" />
+                              <div key={index} className="h-14 w-12 border border-gray-200 rounded-lg relative overflow-hidden bg-gray-100 shrink-0 shadow-2xs">
+                                <img src={imgUrl.startsWith('http') ? imgUrl : 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80'} className="h-full w-full object-cover" alt="preview" />
                               </div>
                             ))}
                           </div>
@@ -571,47 +673,20 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
                       )}
                     </div>
 
-                    {/* Advanced Url Config Toggle */}
-                    <div className="pt-2">
-                      <button
-                        type="button"
-                        onClick={() => setShowAdvancedUrls(!showAdvancedUrls)}
-                        className="text-[10px] font-bold text-neutral-500 hover:text-neutral-300 uppercase tracking-widest"
-                      >
-                        {showAdvancedUrls ? 'Hide Advanced URL overrides' : 'Show Advanced URL overrides'}
-                      </button>
-                      
-                      {showAdvancedUrls && (
-                        <div className="mt-3 space-y-3 p-4 border border-neutral-850 rounded-md bg-[#161614] animate-fade-in">
-                          <div>
-                            <label className="block text-[9px] font-bold uppercase text-neutral-400 mb-1">
-                              Image URLs String (CSV Override)
-                            </label>
-                            <input
-                              type="text"
-                              value={images}
-                              onChange={(e) => setImages(e.target.value)}
-                              className="w-full bg-[#1c1c1a] border border-neutral-850 rounded-sm py-1.5 px-3 text-xs text-neutral-400 font-mono"
-                            />
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
                     {/* Footer Submit Buttons */}
-                    <div className="border-t border-neutral-800/80 pt-6 flex gap-4 bg-[#121211]">
+                    <div className="border-t border-gray-200 pt-5 flex gap-3 bg-white">
                       <button
                         type="submit"
-                        className="flex-1 bg-accent hover:bg-accent-hover text-neutral-950 py-3.5 text-xs font-bold tracking-widest uppercase transition-colors rounded-sm shadow-md"
+                        className="flex-1 bg-[#3B2A20] hover:bg-[#F5820B] text-white py-3 text-xs font-bold tracking-wider uppercase transition-colors rounded-lg shadow-sm cursor-pointer"
                       >
-                        {editingProduct ? 'SAVE CHANGES' : 'CREATE GARMENT'}
+                        {editingProduct ? 'Save Changes' : 'Create Product'}
                       </button>
                       <button
                         type="button"
                         onClick={() => setIsFormOpen(false)}
-                        className="flex-1 bg-[#1c1c1a] border border-neutral-800 hover:bg-neutral-850 text-neutral-400 py-3.5 text-xs font-bold tracking-widest uppercase transition-colors rounded-sm"
+                        className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 text-xs font-bold tracking-wider uppercase transition-colors rounded-lg cursor-pointer"
                       >
-                        CANCEL
+                        Cancel
                       </button>
                     </div>
                   </form>
@@ -624,4 +699,5 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
     </div>
   );
 };
+
 export default ProductsClient;

@@ -30,16 +30,16 @@ export default function ProductSearch({ onSearch }: ProductSearchProps) {
             setQuery(e.target.value);
             onSearch(e.target.value);
           }}
-          placeholder="Search products by name, category, SKU..."
-          className="w-full bg-[#1c1c1a] border border-neutral-800 rounded-md py-2.5 pl-10 pr-10 text-xs font-medium text-white placeholder-neutral-500 focus:outline-hidden focus:border-accent transition-colors"
+          placeholder="Search products by name, category, color..."
+          className="w-full bg-white border border-gray-200 rounded-md py-2.5 pl-10 pr-10 text-xs font-medium text-[#3B2A20] placeholder-gray-400 focus:outline-hidden focus:border-[#F5820B] transition-colors shadow-xs"
         />
-        <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 top-3 pointer-events-none" />
+        <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-3 pointer-events-none" />
 
         {query && (
           <button
             type="button"
             onClick={handleClear}
-            className="absolute right-3 top-2.5 text-neutral-400 hover:text-white p-0.5"
+            className="absolute right-3 top-2.5 text-gray-400 hover:text-[#3B2A20] p-0.5"
             aria-label="Clear search"
           >
             <X className="w-4 h-4" />

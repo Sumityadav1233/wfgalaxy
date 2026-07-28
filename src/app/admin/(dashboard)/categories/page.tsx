@@ -5,6 +5,8 @@ import { createClient } from '@/lib/supabase/client';
 import { addSubcategory, deleteSubcategory } from '@/app/actions/admin';
 import { Plus, Loader2, Trash2 } from 'lucide-react';
 
+import Link from 'next/link';
+
 const CORE_CATEGORIES = ['Men', 'Women', 'Shoes', 'Accessories'];
 
 export default function AdminCategoriesPage() {
@@ -103,8 +105,14 @@ export default function AdminCategoriesPage() {
           
           <ul className="space-y-2">
             {categories.filter(c => CORE_CATEGORIES.map(core => core.toLowerCase()).includes(c.name.toLowerCase())).map(cat => (
-              <li key={cat.id} className="bg-gray-50 p-3 rounded-lg border border-gray-100 font-medium text-[#3B2A20]">
-                {cat.name}
+              <li key={cat.id} className="bg-gray-50 p-3 rounded-lg border border-gray-100 flex justify-between items-center font-medium text-[#3B2A20]">
+                <span>{cat.name}</span>
+                <Link
+                  href={`/admin/products?category=${encodeURIComponent(cat.name.toLowerCase())}&openAdd=true`}
+                  className="inline-flex items-center text-xs bg-white border border-gray-200 hover:border-[#F5820B] hover:text-[#F5820B] px-2.5 py-1 rounded-md transition-colors shadow-2xs font-semibold"
+                >
+                  <Plus className="w-3.5 h-3.5 mr-1" /> Add Product
+                </Link>
               </li>
             ))}
           </ul>
