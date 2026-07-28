@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useMemo } from 'react';
-import { Plus, Edit, Trash2, Video, X, Sparkles, Upload, FileVideo, Image as ImageIcon, Check } from 'lucide-react';
+import { Plus, Edit, Trash2, Video, X, Sparkles, Image as ImageIcon } from 'lucide-react';
 import StockManagement from './StockManagement';
 import ProductSearch from './ProductSearch';
 
@@ -44,16 +44,11 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
   const [lowStockThreshold, setLowStockThreshold] = useState<number>(10);
 
   // Interactive Upload States
-  const [isUploadingVideo, setIsUploadingVideo] = useState(false);
-  const [videoProgress, setVideoProgress] = useState(0);
-  const [uploadedVideoName, setUploadedVideoName] = useState('');
-
   const [isUploadingImages, setIsUploadingImages] = useState(false);
   const [imagesProgress, setImagesProgress] = useState(0);
   const [uploadedImageNames, setUploadedImageNames] = useState<string[]>([]);
   const [showAdvancedUrls, setShowAdvancedUrls] = useState(false);
 
-  const videoInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
   const sizesOptions = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', '4XL', '5XL'];
@@ -71,9 +66,7 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
     setSelectedSizes(['M', 'L', 'XL']);
     setStockQuantity(10);
     setLowStockThreshold(10);
-    setUploadedVideoName('');
     setUploadedImageNames([]);
-    setVideoProgress(0);
     setImagesProgress(0);
     setIsFormOpen(true);
   };
@@ -91,9 +84,7 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
     setSelectedSizes(prod.sizes ? prod.sizes.split(',').map((s) => s.trim()) : []);
     setStockQuantity(prod.stock_quantity ?? 0);
     setLowStockThreshold(prod.low_stock_threshold ?? 10);
-    setUploadedVideoName(prod.videoUrl ? 'Existing promo video' : '');
     setUploadedImageNames(prod.images ? ['Existing catalog images'] : []);
-    setVideoProgress(0);
     setImagesProgress(0);
     setIsFormOpen(true);
   };
@@ -121,40 +112,6 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
 
     return [...matches, ...nonMatches];
   }, [products, searchQuery]);
-
-  // Video Drag-and-Drop / File Select handlers
-  const handleVideoFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files && files[0]) {
-      processVideoFile(files[0]);
-    }
-  };
-
-  const processVideoFile = (file: File) => {
-    if (!file.type.startsWith('video/')) {
-      alert('Please select a valid video file (MP4/WebM/QuickTime).');
-      return;
-    }
-
-    setIsUploadingVideo(true);
-    setVideoProgress(0);
-    setUploadedVideoName(file.name);
-
-    // Simulate upload progress
-    const interval = setInterval(() => {
-      setVideoProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setIsUploadingVideo(false);
-          // Set videoUrl to local object URL so it plays directly in previews!
-          const localUrl = URL.createObjectURL(file);
-          setVideoUrl(localUrl);
-          return 100;
-        }
-        return prev + 10;
-      });
-    }, 150);
-  };
 
   // Images Drag-and-Drop / File Select handlers
   const handleImagesFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -198,13 +155,6 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
       setImagesProgress(100);
       setIsUploadingImages(false);
     }
-  };
-
-  const clearVideo = () => {
-    setVideoUrl('');
-    setUploadedVideoName('');
-    setVideoProgress(0);
-    if (videoInputRef.current) videoInputRef.current.value = '';
   };
 
   const clearImages = () => {
@@ -523,35 +473,6 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-2">
-                          Initial Stock Quantity
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          value={stockQuantity}
-                          onChange={(e) => setStockQuantity(parseInt(e.target.value, 10) || 0)}
-                          placeholder="e.g. 25"
-                          className="w-full bg-[#1c1c1a] border border-neutral-750 rounded-sm py-2.5 px-3 text-sm focus:outline-hidden focus:border-accent text-white font-mono"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-2">
-                          Low Stock Threshold Alert
-                        </label>
-                        <input
-                          type="number"
-                          min="1"
-                          value={lowStockThreshold}
-                          onChange={(e) => setLowStockThreshold(parseInt(e.target.value, 10) || 10)}
-                          placeholder="Default 10"
-                          className="w-full bg-[#1c1c1a] border border-neutral-750 rounded-sm py-2.5 px-3 text-sm focus:outline-hidden focus:border-accent text-white font-mono"
-                        />
-                      </div>
-                    </div>
-
                     <div>
                       <label className="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-2">
                         Product Description *
@@ -650,72 +571,6 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
                       )}
                     </div>
 
-                    {/* 🚀 Drag & Drop VIDEO Upload Zone */}
-                    <div>
-                      <label className="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-2">
-                        Upload Promotional Video (For Social Auto-Post)
-                      </label>
-                      <div
-                        onClick={() => videoInputRef.current?.click()}
-                        className="border-2 border-dashed border-neutral-700 hover:border-accent rounded-md p-6 text-center cursor-pointer transition-colors bg-[#1c1c1a]/50 flex flex-col items-center justify-center space-y-2 group"
-                        onDragOver={(e) => e.preventDefault()}
-                        onDrop={(e) => {
-                          e.preventDefault();
-                          if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-                            processVideoFile(e.dataTransfer.files[0]);
-                          }
-                        }}
-                      >
-                        <input
-                          type="file"
-                          ref={videoInputRef}
-                          accept="video/*"
-                          onChange={handleVideoFileSelect}
-                          className="hidden"
-                        />
-                        <FileVideo className="h-8 w-8 text-neutral-500 group-hover:text-accent transition-colors stroke-[1.5]" />
-                        <span className="text-xs font-semibold text-neutral-300 group-hover:text-white transition-colors">
-                          Drag & drop raw MP4 video or <span className="text-accent underline">browse</span>
-                        </span>
-                        <span className="text-[10px] text-neutral-500">Supports MP4, MOV files (Max 50MB)</span>
-                      </div>
-
-                      {/* Video Upload Progress bar */}
-                      {isUploadingVideo && (
-                        <div className="mt-2 space-y-1">
-                          <div className="flex justify-between text-[10px] text-neutral-400 font-mono">
-                            <span>Uploading video file...</span>
-                            <span>{videoProgress}%</span>
-                          </div>
-                          <div className="w-full bg-neutral-800 h-1 rounded-full overflow-hidden">
-                            <div className="bg-accent h-full transition-all duration-150" style={{ width: `${videoProgress}%` }}></div>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Display Uploaded Video info */}
-                      {videoUrl && (
-                        <div className="mt-3 bg-[#1c1c1a] border border-neutral-800 p-3 rounded-md flex items-center justify-between">
-                          <div className="flex items-center space-x-3">
-                            <div className="h-10 w-10 bg-black rounded-sm overflow-hidden flex items-center justify-center shrink-0 border border-neutral-800">
-                              <video src={videoUrl} className="h-full w-full object-cover" muted />
-                            </div>
-                            <div className="min-w-0">
-                              <span className="text-xs font-semibold text-neutral-200 block truncate max-w-[200px]">
-                                {uploadedVideoName || 'Uploaded promo video'}
-                              </span>
-                              <span className="text-[9px] text-green-400 flex items-center mt-0.5">
-                                <Check className="h-3 w-3 mr-0.5 stroke-[2.5]" /> Ready for cropping
-                              </span>
-                            </div>
-                          </div>
-                          <button type="button" onClick={clearVideo} className="p-1.5 hover:bg-neutral-800 rounded-sm text-neutral-400 hover:text-red-400 transition-colors">
-                            <X className="h-4 w-4" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-
                     {/* Advanced Url Config Toggle */}
                     <div className="pt-2">
                       <button
@@ -736,17 +591,6 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
                               type="text"
                               value={images}
                               onChange={(e) => setImages(e.target.value)}
-                              className="w-full bg-[#1c1c1a] border border-neutral-850 rounded-sm py-1.5 px-3 text-xs text-neutral-400 font-mono"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-[9px] font-bold uppercase text-neutral-400 mb-1">
-                              Video URL String (Override)
-                            </label>
-                            <input
-                              type="text"
-                              value={videoUrl}
-                              onChange={(e) => setVideoUrl(e.target.value)}
                               className="w-full bg-[#1c1c1a] border border-neutral-850 rounded-sm py-1.5 px-3 text-xs text-neutral-400 font-mono"
                             />
                           </div>
