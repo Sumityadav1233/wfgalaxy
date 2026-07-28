@@ -22,11 +22,11 @@ export default function Header() {
   }, []);
 
   const navLinks = [
+    { name: 'Home', href: '/' },
     { name: 'Men', href: '/men' },
     { name: 'Women', href: '/women' },
     { name: 'Shoes', href: '/shoes' },
     { name: 'Accessories', href: '/accessories' },
-    { name: 'Shop All', href: '/shop' },
     { name: 'About', href: '/about' },
   ];
 

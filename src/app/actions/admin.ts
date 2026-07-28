@@ -59,11 +59,16 @@ export async function addProduct(productData: any) {
 export async function deleteSubcategory(id: string, subcategoryName: string) {
   const supabase = await checkAdminAccess();
   
-  // 1. Unlink any products tied to this subcategory (set subcategory to null)
-  await supabase
+  // 1. Check if any products are assigned to this subcategory
+  const { data: existingProducts } = await supabase
     .from('products')
-    .update({ subcategory: null })
-    .ilike('subcategory', subcategoryName);
+    .select('id')
+    .ilike('subcategory', subcategoryName)
+    .limit(1);
+
+  if (existingProducts && existingProducts.length > 0) {
+    throw new Error(`Cannot delete subcategory "${subcategoryName}" because products are still assigned to it. Please move or delete those products first.`);
+  }
 
   // 2. Delete the subcategory
   const { error } = await supabase
@@ -72,6 +77,31 @@ export async function deleteSubcategory(id: string, subcategoryName: string) {
     .eq('id', id);
 
   if (error) throw new Error(`Subcategory deletion failed: ${error.message}`);
+  revalidatePath('/', 'layout');
+  return true;
+}
+
+export async function deleteCategory(id: string, categoryName: string) {
+  const supabase = await checkAdminAccess();
+
+  // 1. Check if products exist for this category
+  const { data: existingProducts } = await supabase
+    .from('products')
+    .select('id')
+    .ilike('category', categoryName)
+    .limit(1);
+
+  if (existingProducts && existingProducts.length > 0) {
+    throw new Error(`Cannot delete category "${categoryName}" because products are still assigned to it. Please move or delete those products first.`);
+  }
+
+  // 2. Delete the category
+  const { error } = await supabase
+    .from('categories')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw new Error(`Category deletion failed: ${error.message}`);
   revalidatePath('/', 'layout');
   return true;
 }

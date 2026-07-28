@@ -3,18 +3,12 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Search, ShoppingBag, MessageSquare } from 'lucide-react';
+import { Home, Search, ShoppingBag, User } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 
 export default function BottomNav() {
   const pathname = usePathname();
   const { cartCount, setIsCartOpen } = useCart();
-
-  const handleOpenChat = () => {
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('open-chat-assistant'));
-    }
-  };
 
   const navItems = [
     {
@@ -37,10 +31,10 @@ export default function BottomNav() {
       isActive: false,
     },
     {
-      name: 'Chat',
-      onClick: handleOpenChat,
-      icon: MessageSquare,
-      isActive: false,
+      name: 'Profile',
+      href: '/admin',
+      icon: User,
+      isActive: pathname.startsWith('/admin'),
     },
   ];
 

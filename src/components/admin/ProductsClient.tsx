@@ -41,8 +41,9 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
-  // Dynamic Categories from database
+  // Dynamic Categories and Subcategories from database
   const [dbCategories, setDbCategories] = useState<{ id: string; name: string }[]>([]);
+  const [dbSubcategories, setDbSubcategories] = useState<{ id: string; name: string; category_id?: string; categories?: { name: string } }[]>([]);
 
   // Form Field States
   const [name, setName] = useState('');
@@ -65,18 +66,41 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
   const imageInputRef = useRef<HTMLInputElement>(null);
   const sizesOptions = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', '4XL', '5XL'];
 
-  // Fetch dynamic categories from Supabase and handle URL search parameters
+  // Default fallback subcategories by main category
+  const FALLBACK_SUBCATEGORIES: Record<string, string[]> = {
+    men: ['shirts', 'pants', 'hoodies', 'jackets', 't-shirts', 'jeans'],
+    women: ['dresses', 'tops', 'skirts', 'jackets', 'jeans', 'sweaters'],
+    shoes: ['sneakers', 'boots', 'formals', 'loafers', 'sandals'],
+    accessories: ['belts', 'wallets', 'caps', 'watches', 'sunglasses'],
+  };
+
+  // Compute available subcategories based on selected Main Category
+  const availableSubcategories = useMemo(() => {
+    const normCat = category.toLowerCase();
+    const matchedSubs = dbSubcategories.filter((s) => {
+      const parentCatName = s.categories?.name?.toLowerCase();
+      return parentCatName === normCat;
+    }).map((s) => s.name);
+
+    if (matchedSubs.length > 0) return matchedSubs;
+    return FALLBACK_SUBCATEGORIES[normCat] || ['shirts', 'pants', 'hoodies', 'jackets'];
+  }, [category, dbSubcategories]);
+
+  // Fetch dynamic categories and subcategories from Supabase
   useEffect(() => {
-    async function loadCategories() {
+    async function loadCategoriesAndSubs() {
       try {
         const supabase = createClient();
         const { data: cats } = await supabase.from('categories').select('*').order('name');
+        const { data: subs } = await supabase.from('subcategories').select('*, categories(name)').order('name');
+        
         if (cats && cats.length > 0) setDbCategories(cats);
+        if (subs && subs.length > 0) setDbSubcategories(subs);
       } catch (err) {
         console.warn('Category load notice:', err);
       }
     }
-    loadCategories();
+    loadCategoriesAndSubs();
 
     // Check URL parameters for direct category navigation (e.g., from categories page)
     if (typeof window !== 'undefined') {
@@ -523,15 +547,18 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-xs font-bold text-gray-700 mb-1.5">
-                          Subcategory (Optional)
+                          Subcategory *
                         </label>
-                        <input
-                          type="text"
+                        <select
                           value={subcategory}
                           onChange={(e) => setSubcategory(e.target.value)}
-                          placeholder="e.g. Hoodies, Shirts, Jeans"
-                          className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2.5 px-3 text-sm focus:outline-hidden focus:border-[#F5820B] focus:bg-white text-[#3B2A20]"
-                        />
+                          className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2.5 px-3 text-sm focus:outline-hidden focus:border-[#F5820B] focus:bg-white text-[#3B2A20] font-semibold capitalize"
+                        >
+                          <option value="">Select Subcategory</option>
+                          {availableSubcategories.map((sub) => (
+                            <option key={sub} value={sub.toLowerCase()}>{sub}</option>
+                          ))}
+                        </select>
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-gray-700 mb-1.5">

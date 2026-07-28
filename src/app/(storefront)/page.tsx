@@ -54,22 +54,16 @@ export default async function HomePage() {
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full flex flex-col md:flex-row items-center justify-between">
           
-          {/* Mobile Clean Hero Layout (Full Width Reel Video Card, No Duplicate Logo) */}
-          <div className="w-full md:hidden flex flex-col items-center">
-            <Link href="/men" className="w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl border border-gray-200 aspect-[4/5] relative group block bg-[#FAF9F6]">
-              <video 
-                src="/hero-video.mp4" 
-                autoPlay 
-                loop 
-                muted 
-                playsInline 
-                className="absolute inset-0 w-full h-full min-w-full min-h-full object-cover object-center scale-105"
-                style={{ objectFit: 'cover', objectPosition: 'center', width: '100%', height: '100%' }}
-              />
-              <div className="absolute bottom-3 left-3 right-3 bg-white/90 backdrop-blur-md p-3.5 rounded-2xl flex justify-between items-center shadow-sm z-10">
-                <span className="font-serif text-xs font-bold text-[#3B2A20]">Men's Collection 2026</span>
-                <span className="text-xs font-bold text-[#F5820B]">Explore &rarr;</span>
-              </div>
+          {/* Mobile Clean Hero Layout (Task 11: Solid light color, short 5-word headline, single CTA) */}
+          <div className="w-full md:hidden flex flex-col items-center justify-center text-center py-12 px-4 space-y-6">
+            <h1 className="font-serif text-3xl font-bold text-[#3B2A20] leading-tight max-w-xs">
+              Carry Style With Everyday Confidence
+            </h1>
+            <Link 
+              href="/shop" 
+              className="bg-[#3B2A20] text-white px-8 py-3.5 rounded-full font-bold text-sm uppercase tracking-wider hover:bg-[#F5820B] transition-colors shadow-md"
+            >
+              Shop Now
             </Link>
           </div>
 
