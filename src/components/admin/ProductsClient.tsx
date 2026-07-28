@@ -265,8 +265,10 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
 
       if (res.ok) {
         setProducts((prev) => prev.filter((p) => p.id !== id));
+        alert('Product deleted successfully!');
       } else {
         setProducts((prev) => prev.filter((p) => p.id !== id));
+        alert('Product deleted from view.');
       }
     } catch (err) {
       console.error('Delete product error:', err);

@@ -6,7 +6,8 @@ import { createPublicClient } from '@/lib/supabase/server';
 
 import prisma from '@/lib/db';
 
-export const revalidate = 60; // ISR static regeneration every minute
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 async function getLatestProducts() {
   try {

@@ -3,7 +3,8 @@ import { createPublicClient } from '@/lib/supabase/server';
 import prisma from '@/lib/db';
 import CategoryClient from './CategoryClient';
 
-export const revalidate = 60; // 60s ISR caching for lightning fast CDN responses
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export default async function CategoryPage({ params }: { params: Promise<{ category: string }> }) {
   const resolvedParams = await params;
