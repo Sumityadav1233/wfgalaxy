@@ -51,36 +51,40 @@ export async function POST(req: NextRequest) {
       const supabase = await createClient();
       const imageArray = finalImages.split(',').map((s) => s.trim()).filter(Boolean);
       
+      const payload: any = {
+        name: name.trim(),
+        description: description.trim(),
+        price: parseFloat(price),
+        category: finalCategory,
+        subcategory: subcategory || null,
+        sizes: sizesStr,
+        colors: colorsStr,
+        images: finalImages,
+        stock_quantity: qty,
+        is_out_of_stock: computedOutOfStock,
+      };
+
       const { data, error } = await supabase
         .from('products')
-        .insert([
-          {
-            name: name.trim(),
-            description: description.trim(),
-            price: parseFloat(price),
-            category: finalCategory,
-            subcategory: subcategory || null,
-            sizes: sizesStr,
-            colors: colorsStr,
-            images: imageArray,
-            image_urls: imageArray,
-            video_url: videoUrl || null,
-            videoUrl: videoUrl || null,
-            stock_quantity: qty,
-            low_stock_threshold: parseInt(low_stock_threshold, 10) || 10,
-            is_out_of_stock: computedOutOfStock,
-          },
-        ])
+        .insert([payload])
         .select()
         .single();
 
-      if (data && !error) {
-        createdProduct = {
-          ...data,
-          id: data.id,
-          images: Array.isArray(data.images) ? data.images.join(',') : (data.images || finalImages),
-          videoUrl: data.videoUrl || data.video_url || videoUrl || null,
-        };
+      if (error) {
+        console.error('Supabase product insert error details:', error.message, error.details);
+        // Retry with array images if string images failed schema check
+        const fallbackPayload = { ...payload, images: imageArray };
+        const { data: fbData, error: fbError } = await supabase
+          .from('products')
+          .insert([fallbackPayload])
+          .select()
+          .single();
+
+        if (fbData && !fbError) {
+          createdProduct = fbData;
+        }
+      } else if (data) {
+        createdProduct = data;
       }
     } catch (sbErr) {
       console.warn('Supabase product creation notice:', sbErr);
