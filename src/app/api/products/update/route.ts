@@ -40,15 +40,7 @@ export async function POST(req: NextRequest) {
     // 1. Try updating in Supabase
     try {
       const supabase = await createClient();
-      const sbUpdateData = { ...updateData };
-      if (typeof sbUpdateData.images === 'string') {
-        const imageArray = sbUpdateData.images.split(',').map((s: string) => s.trim()).filter(Boolean);
-        sbUpdateData.images = imageArray;
-        sbUpdateData.image_urls = imageArray;
-      }
-      if (sbUpdateData.videoUrl !== undefined) {
-        sbUpdateData.video_url = sbUpdateData.videoUrl;
-      }
+      const sbUpdateData: Record<string, any> = { ...updateData };
 
       const { data, error } = await supabase
         .from('products')
@@ -57,12 +49,24 @@ export async function POST(req: NextRequest) {
         .select()
         .single();
 
-      if (data && !error) {
-        resultProduct = {
-          ...data,
-          images: Array.isArray(data.images) ? data.images.join(',') : (data.images || updateData.images || ''),
-          videoUrl: data.videoUrl || data.video_url || updateData.videoUrl || null,
-        };
+      if (error) {
+        console.warn('Supabase update notice:', error.message);
+        // Retry with array images if string images failed schema check
+        if (typeof sbUpdateData.images === 'string') {
+          sbUpdateData.images = sbUpdateData.images.split(',').map((s: string) => s.trim()).filter(Boolean);
+          const { data: fbData, error: fbError } = await supabase
+            .from('products')
+            .update(sbUpdateData)
+            .eq('id', id)
+            .select()
+            .single();
+
+          if (fbData && !fbError) {
+            resultProduct = fbData;
+          }
+        }
+      } else if (data) {
+        resultProduct = data;
       }
     } catch (sbErr) {
       console.warn('Supabase update error notice:', sbErr);
