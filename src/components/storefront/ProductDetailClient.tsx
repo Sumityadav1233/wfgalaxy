@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react';
 import OrderNowModal from './OrderNowModal';
 import MobileImageCarousel from './MobileImageCarousel';
 import { useCart } from '@/context/CartContext';
-import { ShoppingBag, ChevronDown, ChevronUp, Check, Play, Truck, ShieldCheck, RefreshCw, AlertCircle, X } from 'lucide-react';
+import { ShoppingBag, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Check, Play, Truck, ShieldCheck, RefreshCw, AlertCircle, X } from 'lucide-react';
 
 interface ProductDetailClientProps {
   product: any;
@@ -137,16 +137,43 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
           </div>
         )}
 
-        {/* Main Image View */}
+        {/* Main Image View with Slider Controls */}
         <div className="flex-1 bg-gray-100 rounded-2xl overflow-hidden aspect-3/4 relative group shadow-sm border border-gray-100">
           <img 
             src={selectedImage || images[0]} 
             alt={product.name} 
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=600&auto=format&fit=crop';
-            }}
           />
+
+          {/* Desktop Image Slider Navigation Arrows */}
+          {images.length > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  const currentIdx = images.indexOf(selectedImage);
+                  const prevIdx = currentIdx <= 0 ? images.length - 1 : currentIdx - 1;
+                  setSelectedImage(images[prevIdx]);
+                }}
+                className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-[#3B2A20] rounded-full p-2.5 shadow-md transition-all hover:scale-110 opacity-0 group-hover:opacity-100 z-10"
+                aria-label="Previous Photo"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const currentIdx = images.indexOf(selectedImage);
+                  const nextIdx = (currentIdx + 1) % images.length;
+                  setSelectedImage(images[nextIdx]);
+                }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-[#3B2A20] rounded-full p-2.5 shadow-md transition-all hover:scale-110 opacity-0 group-hover:opacity-100 z-10"
+                aria-label="Next Photo"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </>
+          )}
 
           {isOutOfStock && (
             <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] flex items-center justify-center pointer-events-none">

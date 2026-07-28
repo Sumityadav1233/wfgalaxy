@@ -292,8 +292,11 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
     }
 
     const finalSizes = selectedSizes.length > 0 ? selectedSizes.join(',') : 'S,M,L,XL';
-    const finalColors = colors.trim() || 'Black, White';
-    const finalImages = images.trim() || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80';
+    if (!images.trim()) {
+      alert('Please upload product photos before saving.');
+      return;
+    }
+    const finalImages = images.trim();
 
     const payload = {
       name: name.trim(),
@@ -302,7 +305,7 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
       category: category.toLowerCase() || 'men',
       subcategory: subcategory.trim().toLowerCase() || null,
       sizes: finalSizes,
-      colors: finalColors,
+      colors: colors.trim() || 'Black, White',
       images: finalImages,
       videoUrl: videoUrl.trim() || null,
       stock_quantity: stockQuantity,
