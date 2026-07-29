@@ -113,6 +113,7 @@ Hello WF GALAXY, I would like to order this item!`;
     <div className="relative w-full">
       {/* Carousel Container */}
       <div
+        onClick={() => setIsLightboxOpen(true)}
         className="relative w-full h-80 sm:h-96 md:h-[450px] bg-gray-100 rounded-2xl overflow-hidden shadow-xs group border border-gray-100 cursor-pointer"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
@@ -128,6 +129,7 @@ Hello WF GALAXY, I would like to order this item!`;
 
         {/* Fullsize Zoom trigger badge */}
         <button
+          type="button"
           onClick={(e) => {
             e.stopPropagation();
             setIsLightboxOpen(true);
@@ -155,6 +157,7 @@ Hello WF GALAXY, I would like to order this item!`;
         {images.length > 1 && (
           <>
             <button
+              type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 prevImage();
@@ -165,6 +168,7 @@ Hello WF GALAXY, I would like to order this item!`;
               <ChevronLeft className="w-5 h-5" />
             </button>
             <button
+              type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 nextImage();
@@ -179,6 +183,7 @@ Hello WF GALAXY, I would like to order this item!`;
 
         {/* WhatsApp Direct Order floating button */}
         <button
+          type="button"
           onClick={(e) => {
             e.stopPropagation();
             handleWhatsAppRedirect();
@@ -195,6 +200,7 @@ Hello WF GALAXY, I would like to order this item!`;
             {images.map((_, idx) => (
               <button
                 key={idx}
+                type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   setCurrentIndex(idx);
@@ -209,16 +215,17 @@ Hello WF GALAXY, I would like to order this item!`;
         )}
       </div>
 
-      {/* Lightbox Full Size Image Modal */}
+      {/* Lightbox Full Size Image Modal with Slide Controls */}
       {isLightboxOpen && (
         <div
-          className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-md flex flex-col items-center justify-between p-4"
+          className="fixed inset-0 z-[99999] bg-black/95 backdrop-blur-md flex flex-col items-center justify-between p-4 select-none"
           onClick={closeLightbox}
-          onTouchEnd={closeLightbox}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
         >
           {/* Top Header Bar with Navigation Back & Large Close Cross Button */}
           <div 
-            className="w-full flex items-center justify-between pt-8 sm:pt-6 px-3 sm:px-6 z-[10000]"
+            className="w-full flex items-center justify-between pt-8 sm:pt-6 px-3 sm:px-6 z-[100000]"
             onClick={(e) => e.stopPropagation()}
             onTouchEnd={(e) => e.stopPropagation()}
           >
@@ -243,32 +250,88 @@ Hello WF GALAXY, I would like to order this item!`;
             </button>
           </div>
 
-          {/* Center Image Display */}
-          <div
-            className="relative max-w-4xl max-h-[75vh] w-full h-full flex items-center justify-center my-auto"
-            onClick={closeLightbox}
-          >
+          {/* Center Image Display & Left/Right Fullscreen Slide Arrows */}
+          <div className="relative max-w-5xl max-h-[75vh] w-full h-full flex items-center justify-center my-auto px-4">
+            {images.length > 1 && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  prevImage();
+                }}
+                onTouchEnd={(e) => {
+                  e.stopPropagation();
+                  prevImage();
+                }}
+                className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/40 text-white rounded-full p-3 shadow-xl backdrop-blur-md z-[100001] transition-transform active:scale-90 cursor-pointer"
+                aria-label="Previous photo in full screen"
+              >
+                <ChevronLeft className="w-6 h-6 stroke-[2.5]" />
+              </button>
+            )}
+
             <img
               src={images[currentIndex]}
-              alt={`${productName} full view`}
-              className="max-w-full max-h-[75vh] object-contain rounded-xl shadow-2xl"
+              alt={`${productName} full view ${currentIndex + 1}`}
+              className="max-w-full max-h-[75vh] object-contain rounded-2xl shadow-2xl border border-white/10"
+              onClick={(e) => e.stopPropagation()}
             />
+
+            {images.length > 1 && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  nextImage();
+                }}
+                onTouchEnd={(e) => {
+                  e.stopPropagation();
+                  nextImage();
+                }}
+                className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/40 text-white rounded-full p-3 shadow-xl backdrop-blur-md z-[100001] transition-transform active:scale-90 cursor-pointer"
+                aria-label="Next photo in full screen"
+              >
+                <ChevronRight className="w-6 h-6 stroke-[2.5]" />
+              </button>
+            )}
           </div>
 
-          {/* Bottom Bar Controls */}
+          {/* Bottom Bar: Image Slide Dots & WhatsApp Button */}
           <div 
-            className="w-full flex items-center justify-between pb-6 px-4 z-[10000]"
+            className="w-full flex flex-col sm:flex-row items-center justify-between gap-3 pb-6 px-4 z-[100000]"
             onClick={(e) => e.stopPropagation()}
             onTouchEnd={(e) => e.stopPropagation()}
           >
-            <div className="text-white text-xs font-medium bg-black/50 px-3 py-1.5 rounded-full border border-white/10">
-              {currentIndex + 1} / {images.length}
+            <div className="flex items-center gap-3">
+              <span className="text-white text-xs font-semibold bg-black/60 px-3 py-1.5 rounded-full border border-white/10">
+                {currentIndex + 1} / {images.length}
+              </span>
+
+              {/* Fullscreen Slide Dots */}
+              {images.length > 1 && (
+                <div className="flex space-x-1.5 bg-black/40 backdrop-blur-xs px-3 py-1.5 rounded-full border border-white/10">
+                  {images.map((_, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCurrentIndex(idx);
+                      }}
+                      className={`h-2 rounded-full transition-all ${
+                        currentIndex === idx ? 'bg-[#F5820B] w-5' : 'bg-white/50 w-2'
+                      }`}
+                      aria-label={`Jump to photo ${idx + 1}`}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
 
             <button
               type="button"
               onClick={handleWhatsAppRedirect}
-              className="bg-[#25D366] text-white px-4 py-2 rounded-full font-bold text-xs shadow-lg flex items-center gap-1.5 active:scale-95 transition-transform"
+              className="bg-[#25D366] hover:bg-[#128C7E] text-white px-5 py-2.5 rounded-full font-bold text-xs shadow-lg flex items-center gap-1.5 active:scale-95 transition-transform cursor-pointer"
             >
               <MessageCircle className="w-4 h-4" />
               <span>Ask on WhatsApp</span>
