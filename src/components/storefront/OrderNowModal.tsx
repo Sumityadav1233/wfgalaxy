@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { X, Check } from 'lucide-react';
+import { shareImageToWhatsApp } from '@/lib/whatsapp';
 
 interface OrderNowModalProps {
   product: any;
@@ -30,16 +31,13 @@ export default function OrderNowModal({ product, selectedSize, selectedImage, on
       : (typeof product.image_urls === 'string' ? product.image_urls.split(',')[0] : '')
   ) || 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=600&auto=format&fit=crop';
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '';
-    
-    // Calculate total price
     const totalPrice = (Number(product.price) || 0) * formData.quantity;
 
-    // Construct clean WhatsApp message with NO URL links
-    const message = `*NEW ORDER - WF GALAXY*
+    const messageText = `*NEW ORDER - WF GALAXY*
 
 *Customer Details:*
 • Name: ${formData.name}
@@ -58,11 +56,12 @@ ${formData.notes || 'None'}
 
 Please confirm my order details and dispatch timeline. Thank you!`;
 
-    const encodedMessage = encodeURIComponent(message);
-    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
-    
-    // Open WhatsApp in a new tab
-    window.open(whatsappUrl, '_blank');
+    // Send order text with actual selected image to WhatsApp
+    await shareImageToWhatsApp({
+      phone: whatsappNumber,
+      messageText,
+      imageUrl: activeImageUrl,
+    });
     
     // Close modal
     onClose();

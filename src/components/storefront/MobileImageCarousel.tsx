@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Maximize2, MessageCircle, X, ArrowLeft } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { shareImageToWhatsApp } from '@/lib/whatsapp';
 
 interface MobileImageCarouselProps {
   images: string[];
@@ -111,19 +112,22 @@ export default function MobileImageCarousel({
     touchStartX.current = null;
   };
 
-  const handleWhatsAppRedirect = () => {
+  const handleWhatsAppRedirect = async () => {
     const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '';
+    const currentImageUrl = images[currentIndex] || images[0];
     
-    const message = `*INQUIRY / ORDER - WF GALAXY*
+    const messageText = `*INQUIRY / ORDER - WF GALAXY*
 
 • Item: ${productName}
 • Price: Rs. ${productPrice.toLocaleString()}
 ${productSize ? `• Selected Size: ${productSize}\n` : ''}
-Hello WF GALAXY, I would like to order this item!`;
+Hello WF GALAXY, I would like to order this selected item photo!`;
 
-    const encodedMessage = encodeURIComponent(message);
-    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
-    window.open(whatsappUrl, '_blank');
+    await shareImageToWhatsApp({
+      phone: whatsappNumber,
+      messageText,
+      imageUrl: currentImageUrl,
+    });
   };
 
   return (
