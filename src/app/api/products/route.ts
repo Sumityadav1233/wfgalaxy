@@ -1,13 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
-import { createClient } from '@/lib/supabase/server';
+import { createPublicClient, createClient } from '@/lib/supabase/server';
 
 export async function GET(req: NextRequest) {
   try {
-    const products = await prisma.product.findMany({
+    // 1. Fetch from Supabase first
+    try {
+      const supabase = createPublicClient();
+      const { data: sbProducts, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!error && sbProducts && sbProducts.length > 0) {
+        // Normalize fields for components (e.g. image_url -> images)
+        const normalized = sbProducts.map((p: any) => ({
+          ...p,
+          images: p.images || p.image_url || p.image_urls || '',
+        }));
+        return NextResponse.json(normalized);
+      }
+    } catch (sbErr) {
+      console.warn('Supabase GET products notice:', sbErr);
+    }
+
+    // 2. Fallback to Prisma
+    const dbProducts = await prisma.product.findMany({
       orderBy: { createdAt: 'desc' },
     });
-    return NextResponse.json(products);
+    return NextResponse.json(dbProducts);
   } catch (err: any) {
     return NextResponse.json({ error: 'Internal server error', details: err.message }, { status: 500 });
   }
@@ -25,6 +46,7 @@ export async function POST(req: NextRequest) {
       sizes,
       colors,
       images,
+      image_url,
       videoUrl,
       stock_quantity = 0,
       low_stock_threshold = 10,
@@ -37,8 +59,9 @@ export async function POST(req: NextRequest) {
 
     const sizesStr = Array.isArray(sizes) ? sizes.join(',') : String(sizes || 'S,M,L');
     const colorsStr = Array.isArray(colors) ? colors.join(',') : String(colors || 'Default');
-    const imagesStr = Array.isArray(images) ? images.join(',') : String(images || '');
-    const finalCategory = category || 'men';
+    const rawImagesStr = images || image_url || '';
+    const imagesStr = Array.isArray(rawImagesStr) ? rawImagesStr.join(',') : String(rawImagesStr || '');
+    const finalCategory = (category || 'men').toLowerCase();
 
     const finalImages = imagesStr.trim() || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80';
     const qty = parseInt(stock_quantity, 10) || 0;
@@ -48,20 +71,22 @@ export async function POST(req: NextRequest) {
 
     // 1. Try creating in Supabase
     try {
-      const supabase = await createClient();
-      const imageArray = finalImages.split(',').map((s) => s.trim()).filter(Boolean);
+      const supabase = createPublicClient();
       
       const payload: any = {
         name: name.trim(),
         description: description.trim(),
         price: parseFloat(price),
         category: finalCategory,
-        subcategory: subcategory || null,
+        subcategory: subcategory ? subcategory.trim().toLowerCase() : null,
         sizes: sizesStr,
         colors: colorsStr,
+        image_url: finalImages,
         images: finalImages,
         stock_quantity: qty,
+        low_stock_threshold: parseInt(low_stock_threshold, 10) || 10,
         is_out_of_stock: computedOutOfStock,
+        video_url: videoUrl || null,
       };
 
       const { data, error } = await supabase
@@ -71,26 +96,15 @@ export async function POST(req: NextRequest) {
         .single();
 
       if (error) {
-        console.error('Supabase product insert error details:', error.message, error.details);
-        // Retry with array images if string images failed schema check
-        const fallbackPayload = { ...payload, images: imageArray };
-        const { data: fbData, error: fbError } = await supabase
-          .from('products')
-          .insert([fallbackPayload])
-          .select()
-          .single();
-
-        if (fbData && !fbError) {
-          createdProduct = fbData;
-        }
+        console.error('Supabase product insert error:', error.message);
       } else if (data) {
         createdProduct = data;
       }
     } catch (sbErr) {
-      console.warn('Supabase product creation notice:', sbErr);
+      console.error('Supabase product creation exception:', sbErr);
     }
 
-    // 2. Also save in Prisma
+    // 2. Also save in Prisma if available
     try {
       const prismaProduct = await prisma.product.create({
         data: {
@@ -98,7 +112,7 @@ export async function POST(req: NextRequest) {
           description: description.trim(),
           price: parseFloat(price),
           category: finalCategory,
-          subcategory: subcategory || null,
+          subcategory: subcategory ? subcategory.trim().toLowerCase() : null,
           sizes: sizesStr,
           colors: colorsStr,
           images: finalImages,
@@ -117,8 +131,17 @@ export async function POST(req: NextRequest) {
     }
 
     if (!createdProduct) {
-      return NextResponse.json({ error: 'Failed to create product in database' }, { status: 500 });
+      return NextResponse.json({ error: 'Failed to insert product into database' }, { status: 500 });
     }
+
+    // Normalize images field before returning
+    if (createdProduct && !createdProduct.images && createdProduct.image_url) {
+      createdProduct.images = createdProduct.image_url;
+    }
+
+    // Revalidate storefront pages
+    const { revalidatePath } = await import('next/cache');
+    revalidatePath('/', 'layout');
 
     return NextResponse.json(createdProduct);
   } catch (error: any) {
@@ -126,4 +149,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to create product', details: error.message }, { status: 500 });
   }
 }
-

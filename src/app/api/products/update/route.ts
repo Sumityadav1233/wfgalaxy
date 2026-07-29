@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/server';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { id, name, description, price, category, subcategory, sizes, colors, images, videoUrl, stock_quantity, low_stock_threshold, is_out_of_stock } = body;
+    const { id, name, description, price, category, subcategory, sizes, colors, images, image_url, videoUrl, stock_quantity, low_stock_threshold, is_out_of_stock } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'Missing product ID' }, { status: 400 });
@@ -20,7 +20,14 @@ export async function POST(req: NextRequest) {
     if (subcategory !== undefined) updateData.subcategory = subcategory || null;
     if (sizes !== undefined) updateData.sizes = Array.isArray(sizes) ? sizes.join(',') : String(sizes);
     if (colors !== undefined) updateData.colors = Array.isArray(colors) ? colors.join(',') : String(colors);
-    if (images !== undefined) updateData.images = Array.isArray(images) ? images.join(',') : String(images);
+    
+    const rawImagesStr = images || image_url;
+    if (rawImagesStr !== undefined) {
+      const imgStr = Array.isArray(rawImagesStr) ? rawImagesStr.join(',') : String(rawImagesStr);
+      updateData.images = imgStr;
+      updateData.image_url = imgStr;
+    }
+    
     if (videoUrl !== undefined) updateData.videoUrl = videoUrl || null;
     
     if (stock_quantity !== undefined) {
@@ -41,6 +48,7 @@ export async function POST(req: NextRequest) {
     try {
       const supabase = await createClient();
       const sbUpdateData: Record<string, any> = { ...updateData };
+      delete sbUpdateData.images; // Prefer image_url column in Supabase schema
 
       const { data, error } = await supabase
         .from('products')
@@ -50,20 +58,19 @@ export async function POST(req: NextRequest) {
         .single();
 
       if (error) {
-        console.warn('Supabase update notice:', error.message);
-        // Retry with array images if string images failed schema check
-        if (typeof sbUpdateData.images === 'string') {
-          sbUpdateData.images = sbUpdateData.images.split(',').map((s: string) => s.trim()).filter(Boolean);
-          const { data: fbData, error: fbError } = await supabase
-            .from('products')
-            .update(sbUpdateData)
-            .eq('id', id)
-            .select()
-            .single();
+        console.warn('Supabase update notice (image_url):', error.message);
+        // Fallback update with images column
+        const altUpdateData: Record<string, any> = { ...updateData };
+        delete altUpdateData.image_url;
+        const { data: fbData, error: fbError } = await supabase
+          .from('products')
+          .update(altUpdateData)
+          .eq('id', id)
+          .select()
+          .single();
 
-          if (fbData && !fbError) {
-            resultProduct = fbData;
-          }
+        if (fbData && !fbError) {
+          resultProduct = fbData;
         }
       } else if (data) {
         resultProduct = data;
@@ -74,9 +81,11 @@ export async function POST(req: NextRequest) {
 
     // 2. Also update in Prisma
     try {
+      const prismaUpdateData = { ...updateData };
+      delete prismaUpdateData.image_url; // Prisma schema uses images string
       const prismaProduct = await prisma.product.update({
         where: { id },
-        data: updateData,
+        data: prismaUpdateData,
       });
       if (!resultProduct) {
         resultProduct = prismaProduct;
@@ -86,8 +95,11 @@ export async function POST(req: NextRequest) {
     }
 
     if (!resultProduct) {
-      // Fallback response with provided updates if record exists
       resultProduct = { id, ...updateData };
+    }
+
+    if (resultProduct && !resultProduct.images && resultProduct.image_url) {
+      resultProduct.images = resultProduct.image_url;
     }
 
     return NextResponse.json(resultProduct);
@@ -96,4 +108,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Internal server error', details: error.message }, { status: 500 });
   }
 }
-

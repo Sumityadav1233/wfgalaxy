@@ -110,14 +110,22 @@ export async function deleteProduct(id: string) {
   console.log('Attempting to delete product with ID:', id);
   try {
     const supabase = await createClient();
+    const numId = Number(id);
     
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from('products')
       .delete()
       .eq('id', id)
       .select();
 
-    if (error) {
+    if ((!data || data.length === 0) && !isNaN(numId)) {
+      const { data: numData, error: numError } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', numId)
+        .select();
+      if (numError) console.warn('Delete product notice (numeric):', numError.message);
+    } else if (error) {
       console.warn('Delete product notice:', error.message);
     }
   } catch (err) {

@@ -34,6 +34,20 @@ export async function POST(req: NextRequest) {
         const { data: d3 } = await srvSupabase.from('products').delete().eq('id', id).select();
         if (d3 && d3.length > 0) deletedProduct = d3[0];
       }
+
+      // Cleanup image files from Supabase storage bucket if present
+      if (deletedProduct) {
+        const imageUrlsStr = deletedProduct.image_url || deletedProduct.images || '';
+        const urls = imageUrlsStr.split(',').map((u: string) => u.trim());
+        for (const url of urls) {
+          if (url.includes('product-images/')) {
+            const path = url.split('product-images/').pop();
+            if (path) {
+              await pubSupabase.storage.from('product-images').remove([path]);
+            }
+          }
+        }
+      }
     } catch (sbErr) {
       console.warn('Supabase delete error notice:', sbErr);
     }

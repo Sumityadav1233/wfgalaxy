@@ -45,16 +45,30 @@ export async function uploadImages(files: File[]): Promise<string[]> {
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
       const filePath = `products/${fileName}`;
 
+      // Upload to 'product-images' bucket
       const { error } = await supabase.storage
-        .from('products')
+        .from('product-images')
         .upload(filePath, file);
 
       if (!error) {
         const { data: publicUrlData } = supabase.storage
-          .from('products')
+          .from('product-images')
           .getPublicUrl(filePath);
         if (publicUrlData?.publicUrl) {
           uploadedUrls.push(publicUrlData.publicUrl);
+        }
+      } else {
+        // Fallback to 'products' if product-images fails
+        const { error: altErr } = await supabase.storage
+          .from('products')
+          .upload(filePath, file);
+        if (!altErr) {
+          const { data: altUrlData } = supabase.storage
+            .from('products')
+            .getPublicUrl(filePath);
+          if (altUrlData?.publicUrl) {
+            uploadedUrls.push(altUrlData.publicUrl);
+          }
         }
       }
     }

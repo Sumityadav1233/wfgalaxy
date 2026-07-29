@@ -6,7 +6,7 @@ import { Lock, Mail, ArrowRight, ShieldCheck } from 'lucide-react';
 
 export default function AdminLoginForm() {
   const router = useRouter();
-  const [email, setEmail] = useState('wfgalaxy6977@gmail.com');
+  const [email, setEmail] = useState('owner@wfgalaxy.com');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -64,7 +64,7 @@ export default function AdminLoginForm() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="wfgalaxy6977@gmail.com"
+              placeholder="owner@wfgalaxy.com"
               className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 pl-10 pr-4 text-xs font-medium text-[#3B2A20] focus:outline-hidden focus:border-[#F5820B]"
             />
             <Mail className="w-4 h-4 text-gray-400 absolute left-3.5 top-3.5" />

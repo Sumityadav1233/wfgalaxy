@@ -4,7 +4,8 @@ import prisma from '@/lib/db';
 import { notFound } from 'next/navigation';
 import ProductDetailClient from '@/components/storefront/ProductDetailClient';
 
-export const revalidate = 60; // 60s ISR caching for lightning fast CDN responses
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export default async function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
@@ -15,11 +16,22 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
   // 1. Attempt lookup in Supabase
   try {
     const supabase = createPublicClient();
-    const { data } = await supabase
+    const numId = Number(productId);
+
+    let { data } = await supabase
       .from('products')
       .select('*')
       .eq('id', productId)
-      .single();
+      .maybeSingle();
+
+    if (!data && !isNaN(numId)) {
+      const { data: numData } = await supabase
+        .from('products')
+        .select('*')
+        .eq('id', numId)
+        .maybeSingle();
+      if (numData) data = numData;
+    }
 
     if (data) {
       product = data;

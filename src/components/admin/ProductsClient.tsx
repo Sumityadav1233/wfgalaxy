@@ -317,70 +317,26 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
     console.log("Saving to database:", payload);
 
     try {
-      const supabase = createClient();
-
       if (editingProduct) {
-        // Direct Supabase update
-        let { data: updatedSb, error: sbErr } = await supabase
-          .from('products')
-          .update(payload)
-          .eq('id', editingProduct.id)
-          .select()
-          .single();
-
-        if (sbErr) {
-          const minimalPayload = {
-            name: payload.name,
-            description: payload.description,
-            price: payload.price,
-            category: payload.category,
-            subcategory: payload.subcategory,
-          };
-          await supabase.from('products').update(minimalPayload).eq('id', editingProduct.id);
-        }
-
         // API update
-        await fetch('/api/products/update', {
+        const res = await fetch('/api/products/update', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id: editingProduct.id, ...payload }),
         });
 
-        setProducts((prev) => prev.map((p) => (p.id === editingProduct.id ? { ...p, ...payload } : p)));
+        let updatedProd = { id: editingProduct.id, ...payload };
+        if (res.ok) {
+          try {
+            const data = await res.json();
+            if (data && data.id) updatedProd = { ...updatedProd, ...data };
+          } catch {}
+        }
+
+        setProducts((prev) => prev.map((p) => (p.id === editingProduct.id ? updatedProd : p)));
         setIsFormOpen(false);
         alert('Product updated successfully!');
       } else {
-        // Direct Supabase insert
-        let { data: createdSb, error: sbErr } = await supabase
-          .from('products')
-          .insert([payload])
-          .select()
-          .single();
-
-        if (sbErr) {
-          console.warn('Full payload insert error:', sbErr.message);
-          // Fallback to minimal payload (name, description, price, category, subcategory)
-          const minimalPayload = {
-            name: payload.name,
-            description: payload.description,
-            price: payload.price,
-            category: payload.category,
-            subcategory: payload.subcategory,
-          };
-          const { data: minData, error: minErr } = await supabase
-            .from('products')
-            .insert([minimalPayload])
-            .select()
-            .single();
-
-          if (minData && !minErr) {
-            createdSb = minData;
-          } else if (minErr) {
-            console.error('Minimal payload insert error:', minErr.message);
-            alert('Supabase Insert Warning: ' + minErr.message);
-          }
-        }
-
         // API insert
         const res = await fetch('/api/products', {
           method: 'POST',
@@ -388,27 +344,23 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
           body: JSON.stringify(payload),
         });
 
-        let newProd = createdSb;
-        if (!newProd && res.ok) {
-          try { newProd = await res.json(); } catch {}
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || errData.details || 'Failed to save product to database');
         }
-        if (!newProd) {
-          newProd = { id: `temp_${Date.now()}`, ...payload };
+
+        const newProd = await res.json();
+        if (!newProd || !newProd.id) {
+          throw new Error('Database did not return a valid product ID.');
         }
 
         setProducts((prev) => [newProd, ...prev]);
         setIsFormOpen(false);
-        alert('Product added successfully!');
+        alert('Product added successfully to database!');
       }
     } catch (err: any) {
       console.error('Submit Product Error:', err);
-      if (editingProduct) {
-        setProducts((prev) => prev.map((p) => (p.id === editingProduct.id ? { ...p, ...payload } : p)));
-      } else {
-        setProducts((prev) => [{ id: `temp_${Date.now()}`, ...payload }, ...prev]);
-      }
-      setIsFormOpen(false);
-      alert('Product saved!');
+      alert(`Error saving product: ${err.message || 'Check database connection'}`);
     }
   };
 
@@ -460,8 +412,9 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {filteredProducts.map((product) => {
-                  const imageArray = product.images ? product.images.split(',') : [];
-                  const previewImg = imageArray[0] && imageArray[0].startsWith('http') ? imageArray[0] : (imageArray[0] || 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=600&auto=format&fit=crop');
+                  const rawImgs = product.images || (product as any).image_url || (product as any).image_urls || '';
+                  const imageArray = typeof rawImgs === 'string' ? rawImgs.split(',') : (Array.isArray(rawImgs) ? rawImgs : []);
+                  const previewImg = imageArray[0] && (imageArray[0].startsWith('http') || imageArray[0].startsWith('blob:')) ? imageArray[0] : (imageArray[0] || 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=600&auto=format&fit=crop');
                   return (
                     <tr key={product.id} className="hover:bg-orange-50/30 transition-colors">
                       {/* Image */}
@@ -532,8 +485,9 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
           </div>
         ) : (
           filteredProducts.map((product) => {
-            const imageArray = product.images ? product.images.split(',') : [];
-            const previewImg = imageArray[0] && imageArray[0].startsWith('http') ? imageArray[0] : (imageArray[0] || 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=600&auto=format&fit=crop');
+            const rawImgs = product.images || (product as any).image_url || (product as any).image_urls || '';
+            const imageArray = typeof rawImgs === 'string' ? rawImgs.split(',') : (Array.isArray(rawImgs) ? rawImgs : []);
+            const previewImg = imageArray[0] && (imageArray[0].startsWith('http') || imageArray[0].startsWith('blob:')) ? imageArray[0] : (imageArray[0] || 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=600&auto=format&fit=crop');
             return (
               <div key={product.id} className="bg-white p-4 rounded-xl border border-gray-200 shadow-xs space-y-3">
                 <div className="flex items-center space-x-3">
