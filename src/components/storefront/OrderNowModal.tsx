@@ -1,15 +1,16 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X } from 'lucide-react';
+import { X, Check } from 'lucide-react';
 
 interface OrderNowModalProps {
   product: any;
   selectedSize: string;
+  selectedImage?: string;
   onClose: () => void;
 }
 
-export default function OrderNowModal({ product, selectedSize, onClose }: OrderNowModalProps) {
+export default function OrderNowModal({ product, selectedSize, selectedImage, onClose }: OrderNowModalProps) {
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -22,21 +23,25 @@ export default function OrderNowModal({ product, selectedSize, onClose }: OrderN
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  // Determine exact selected photo URL
+  const activeImageUrl = selectedImage || (
+    Array.isArray(product.image_urls) && product.image_urls.length > 0
+      ? product.image_urls[0]
+      : (typeof product.image_urls === 'string' ? product.image_urls.split(',')[0] : '')
+  ) || 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=600&auto=format&fit=crop';
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '';
     
     // Calculate total price
-    const totalPrice = product.price * formData.quantity;
-    const imageUrl = Array.isArray(product.image_urls)
-      ? product.image_urls[0]
-      : (product.images ? product.images.split(',')[0] : '');
+    const totalPrice = (Number(product.price) || 0) * formData.quantity;
 
-    // Construct enhanced WhatsApp message with product image URL
+    // Construct enhanced WhatsApp message with EXACT selected photo URL
     const message = `*NEW ORDER: ${product.name}*
 
-*Product Image:* ${imageUrl || 'N/A'}
+📷 *Selected Item Photo:* ${activeImageUrl}
 
 *Customer Details:*
 • Name: ${formData.name}
@@ -45,9 +50,8 @@ export default function OrderNowModal({ product, selectedSize, onClose }: OrderN
 
 *Order Details:*
 • Item: ${product.name}
-• Product ID: ${product.id}
 • Size: ${selectedSize || 'Standard'}
-• Unit Price: Rs. ${Number(product.price).toLocaleString()}
+• Unit Price: Rs. ${Number(product.price || 0).toLocaleString()}
 • Quantity: ${formData.quantity}
 • Total Price: Rs. ${totalPrice.toLocaleString()}
 
@@ -73,21 +77,27 @@ Please confirm my order details and dispatch timeline. Thank you!`;
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-slide-up flex flex-col max-h-[90vh]">
         <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-[#FAF9F6]">
           <h2 className="font-serif text-2xl font-bold text-[#3B2A20]">Order Information</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-[#3B2A20] transition-colors">
+          <button onClick={onClose} className="text-gray-500 hover:text-[#3B2A20] transition-colors cursor-pointer">
             <X className="h-6 w-6" />
           </button>
         </div>
         
         <div className="p-6 overflow-y-auto">
-          <div className="flex gap-4 items-center mb-6 p-4 bg-orange-50 rounded-xl">
+          {/* Selected Item & Photo Preview Header */}
+          <div className="flex gap-4 items-center mb-6 p-4 bg-orange-50 rounded-xl border border-orange-200">
             <img 
-              src={product.image_urls?.[0] || ''} 
+              src={activeImageUrl} 
               alt={product.name} 
-              className="w-16 h-16 object-cover rounded-md"
+              className="w-20 h-20 object-cover rounded-lg border-2 border-[#F5820B] shadow-sm flex-shrink-0"
             />
             <div>
-              <h4 className="font-bold text-[#3B2A20]">{product.name}</h4>
-              <p className="text-sm text-gray-600">Size: {selectedSize} | Rs. {product.price}</p>
+              <h4 className="font-bold text-[#3B2A20] text-base">{product.name}</h4>
+              <p className="text-xs font-semibold text-[#F5820B] mt-0.5">
+                Selected Photo Variant attached for WhatsApp
+              </p>
+              <p className="text-sm font-bold text-gray-700 mt-1">
+                Size: {selectedSize || 'Standard'} | Rs. {Number(product.price || 0).toLocaleString()}
+              </p>
             </div>
           </div>
 
@@ -137,7 +147,7 @@ Please confirm my order details and dispatch timeline. Thank you!`;
                 <button 
                   type="button" 
                   onClick={() => setFormData({ ...formData, quantity: Math.max(1, formData.quantity - 1) })}
-                  className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center hover:bg-gray-100"
+                  className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center hover:bg-gray-100 font-bold"
                 >
                   -
                 </button>
@@ -145,7 +155,7 @@ Please confirm my order details and dispatch timeline. Thank you!`;
                 <button 
                   type="button" 
                   onClick={() => setFormData({ ...formData, quantity: formData.quantity + 1 })}
-                  className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center hover:bg-gray-100"
+                  className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center hover:bg-gray-100 font-bold"
                 >
                   +
                 </button>
@@ -168,13 +178,13 @@ Please confirm my order details and dispatch timeline. Thank you!`;
         
         <div className="p-6 border-t border-gray-100 bg-gray-50 flex justify-between items-center">
           <div>
-            <p className="text-sm text-gray-500">Total Price</p>
-            <p className="text-2xl font-bold text-[#3B2A20]">Rs. {(product.price * formData.quantity).toLocaleString()}</p>
+            <p className="text-xs text-gray-500 font-medium">Total Price</p>
+            <p className="text-2xl font-bold text-[#3B2A20]">Rs. {(Number(product.price || 0) * formData.quantity).toLocaleString()}</p>
           </div>
           <button 
             type="submit" 
             form="order-form"
-            className="bg-[#25D366] text-white px-8 py-3 rounded-full font-bold shadow-md hover:bg-[#128C7E] hover:shadow-lg transition-all"
+            className="bg-[#25D366] text-white px-8 py-3 rounded-full font-bold shadow-md hover:bg-[#128C7E] hover:shadow-lg transition-all cursor-pointer"
           >
             Order via WhatsApp
           </button>

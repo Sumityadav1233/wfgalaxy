@@ -115,6 +115,8 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
           productPrice={Number(product.price) || 0}
           productSize={selectedSize}
           isOutOfStock={isOutOfStock}
+          selectedImage={selectedImage}
+          onSelectImage={(img) => setSelectedImage(img)}
         />
       </div>
 
@@ -381,7 +383,8 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
             ...product,
             image_urls: images,
           }} 
-          selectedSize={selectedSize} 
+          selectedSize={selectedSize}
+          selectedImage={selectedImage}
           onClose={() => setIsOrderModalOpen(false)} 
         />
       )}

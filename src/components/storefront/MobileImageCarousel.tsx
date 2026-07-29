@@ -11,6 +11,8 @@ interface MobileImageCarouselProps {
   productPrice?: number;
   productSize?: string;
   isOutOfStock?: boolean;
+  selectedImage?: string;
+  onSelectImage?: (img: string, index: number) => void;
 }
 
 export default function MobileImageCarousel({
@@ -19,6 +21,8 @@ export default function MobileImageCarousel({
   productPrice = 0,
   productSize = '',
   isOutOfStock = false,
+  selectedImage = '',
+  onSelectImage,
 }: MobileImageCarouselProps) {
   const router = useRouter();
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -28,6 +32,16 @@ export default function MobileImageCarousel({
   if (!images || images.length === 0) {
     images = ['https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=600&auto=format&fit=crop'];
   }
+
+  // Sync currentIndex when selectedImage prop changes from parent
+  useEffect(() => {
+    if (selectedImage) {
+      const idx = images.indexOf(selectedImage);
+      if (idx !== -1 && idx !== currentIndex) {
+        setCurrentIndex(idx);
+      }
+    }
+  }, [selectedImage, images]);
 
   useEffect(() => {
     if (isLightboxOpen) {
@@ -43,13 +57,16 @@ export default function MobileImageCarousel({
     }
   }, [isLightboxOpen]);
 
-  const nextImage = () => {
-    setCurrentIndex((prev) => (prev + 1) % images.length);
+  const changeImage = (newIdx: number) => {
+    const validIdx = (newIdx + images.length) % images.length;
+    setCurrentIndex(validIdx);
+    if (onSelectImage && images[validIdx]) {
+      onSelectImage(images[validIdx], validIdx);
+    }
   };
 
-  const prevImage = () => {
-    setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
-  };
+  const nextImage = () => changeImage(currentIndex + 1);
+  const prevImage = () => changeImage(currentIndex - 1);
 
   const closeLightbox = (e?: React.SyntheticEvent) => {
     if (e) {
@@ -99,10 +116,10 @@ export default function MobileImageCarousel({
     const currentImageUrl = images[currentIndex] || images[0];
     
     const message = `*Inquiry / Order: ${productName}*
+📷 *Selected Photo:* ${currentImageUrl}
 Price: Rs. ${productPrice.toLocaleString()}
-${productSize ? `Size: ${productSize}\n` : ''}Product Image: ${currentImageUrl}
-
-Hello WF GALAXY, I would like to order this item!`;
+${productSize ? `Size: ${productSize}\n` : ''}
+Hello WF GALAXY, I would like to order this selected item photo!`;
 
     const encodedMessage = encodeURIComponent(message);
     const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
@@ -110,7 +127,7 @@ Hello WF GALAXY, I would like to order this item!`;
   };
 
   return (
-    <div className="relative w-full">
+    <div className="relative w-full space-y-3">
       {/* Carousel Container */}
       <div
         onClick={() => setIsLightboxOpen(true)}
@@ -126,6 +143,13 @@ Hello WF GALAXY, I would like to order this item!`;
           priority={currentIndex === 0}
           className="object-cover transition-transform duration-300 group-hover:scale-105"
         />
+
+        {/* Photo Order Badge (Top Left) */}
+        {images.length > 1 && (
+          <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-md text-white px-3 py-1 rounded-full text-[11px] font-bold tracking-wider uppercase z-10 shadow-md border border-white/20">
+            Photo {currentIndex + 1} of {images.length}
+          </div>
+        )}
 
         {/* Fullsize Zoom trigger badge */}
         <button
@@ -162,7 +186,7 @@ Hello WF GALAXY, I would like to order this item!`;
                 e.stopPropagation();
                 prevImage();
               }}
-              className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-[#3B2A20] rounded-full p-2 shadow-md transition-transform hover:scale-110 z-10"
+              className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-[#3B2A20] rounded-full p-2 shadow-md transition-transform hover:scale-110 z-10 cursor-pointer"
               aria-label="Previous image"
             >
               <ChevronLeft className="w-5 h-5" />
@@ -173,7 +197,7 @@ Hello WF GALAXY, I would like to order this item!`;
                 e.stopPropagation();
                 nextImage();
               }}
-              className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-[#3B2A20] rounded-full p-2 shadow-md transition-transform hover:scale-110 z-10"
+              className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-[#3B2A20] rounded-full p-2 shadow-md transition-transform hover:scale-110 z-10 cursor-pointer"
               aria-label="Next image"
             >
               <ChevronRight className="w-5 h-5" />
@@ -188,7 +212,7 @@ Hello WF GALAXY, I would like to order this item!`;
             e.stopPropagation();
             handleWhatsAppRedirect();
           }}
-          className="absolute bottom-3 right-3 bg-[#25D366] hover:bg-[#128C7E] text-white px-3 py-1.5 rounded-full font-bold text-xs shadow-lg flex items-center space-x-1.5 transition-transform hover:scale-105 z-10"
+          className="absolute bottom-3 right-3 bg-[#25D366] hover:bg-[#128C7E] text-white px-3 py-1.5 rounded-full font-bold text-xs shadow-lg flex items-center space-x-1.5 transition-transform hover:scale-105 z-10 cursor-pointer"
         >
           <MessageCircle className="w-4 h-4" />
           <span>Ask on WhatsApp</span>
@@ -203,7 +227,7 @@ Hello WF GALAXY, I would like to order this item!`;
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setCurrentIndex(idx);
+                  changeImage(idx);
                 }}
                 className={`w-2 h-2 rounded-full transition-all ${
                   currentIndex === idx ? 'bg-white w-4' : 'bg-white/50'
@@ -214,6 +238,29 @@ Hello WF GALAXY, I would like to order this item!`;
           </div>
         )}
       </div>
+
+      {/* Selected Photo Thumbnails Strip Selector */}
+      {images.length > 1 && (
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 px-1 no-scrollbar">
+          {images.map((img: string, idx: number) => (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => changeImage(idx)}
+              className={`relative flex-shrink-0 w-16 h-20 rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${
+                currentIndex === idx
+                  ? 'border-[#F5820B] ring-2 ring-[#F5820B]/40 shadow-md scale-105 opacity-100'
+                  : 'border-transparent opacity-60 hover:opacity-100'
+              }`}
+            >
+              <img src={img} alt={`Option ${idx + 1}`} className="w-full h-full object-cover" />
+              <span className="absolute bottom-1 right-1 bg-black/70 text-white text-[9px] font-bold px-1 rounded">
+                #{idx + 1}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Lightbox Full Size Image Modal with Slide Controls */}
       {isLightboxOpen && (
