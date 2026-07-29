@@ -21,9 +21,9 @@ export default function Footer() {
               Carry style with confidence. Premium fashion & luxury outerwear designed for the modern lifestyle. Located at Shiv Chowk, PWHH+RVJ, Janakpur 45600.
             </p>
             <div className="flex space-x-4 items-center">
-              <a href="#" className="text-gray-400 font-bold text-sm hover:text-[#F5820B] transition-colors">IG</a>
-              <a href="#" className="text-gray-400 font-bold text-sm hover:text-[#F5820B] transition-colors">FB</a>
-              <a href="#" className="text-gray-400 font-bold text-sm hover:text-[#F5820B] transition-colors">X</a>
+              <a href="https://www.tiktok.com/@sumit__779" target="_blank" rel="noopener noreferrer" className="text-gray-400 font-bold text-sm hover:text-[#F5820B] transition-colors">TikTok</a>
+              <a href="https://www.instagram.com/wfgalaxy03" target="_blank" rel="noopener noreferrer" className="text-gray-400 font-bold text-sm hover:text-[#F5820B] transition-colors">IG</a>
+              <a href="https://facebook.com/wfgalaxy" target="_blank" rel="noopener noreferrer" className="text-gray-400 font-bold text-sm hover:text-[#F5820B] transition-colors">FB</a>
             </div>
           </div>
 
@@ -63,10 +63,15 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="border-t border-gray-100 pt-8 flex flex-col md:flex-row justify-between items-center">
-          <p className="text-xs text-gray-400 mb-4 md:mb-0">
-            &copy; {new Date().getFullYear()} WF GALAXY. All rights reserved. Shiv Chowk, Janakpur.
-          </p>
+        <div className="border-t border-gray-100 pt-8 flex flex-col md:flex-row justify-between items-center text-center md:text-left gap-4">
+          <div>
+            <p className="text-xs text-gray-400">
+              &copy; {new Date().getFullYear()} WF GALAXY. All rights reserved. Shiv Chowk, Janakpur.
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              Developed by <strong className="text-[#3B2A20]">SUMIT KUMAR YADAV</strong> | Phone: <a href="tel:9823976977" className="hover:text-[#F5820B] font-semibold">9823976977</a> | TikTok: <a href="https://www.tiktok.com/@sumit__779" target="_blank" rel="noopener noreferrer" className="hover:text-[#F5820B] font-semibold text-[#F5820B]">@sumit__779</a>
+            </p>
+          </div>
           <div className="flex space-x-6 text-xs text-gray-400">
             <Link href="/" className="hover:text-[#F5820B] transition-colors">Privacy Policy</Link>
             <Link href="/" className="hover:text-[#F5820B] transition-colors">Terms of Service</Link>

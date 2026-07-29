@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Search, ShoppingBag, User } from 'lucide-react';
+import { Home, Search, ShoppingBag, MessageSquare } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 
 export default function BottomNav() {
@@ -31,10 +31,10 @@ export default function BottomNav() {
       isActive: false,
     },
     {
-      name: 'Profile',
-      href: '/admin',
-      icon: User,
-      isActive: pathname.startsWith('/admin'),
+      name: 'AI Chat',
+      onClick: () => window.dispatchEvent(new CustomEvent('open-chat-assistant')),
+      icon: MessageSquare,
+      isActive: false,
     },
   ];
 

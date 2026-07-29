@@ -22,8 +22,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized admin email.' }, { status: 403 });
     }
 
-    // Password check for #7798WFgalaxy$ or admin123
-    const validPasswords = ['#7798WFgalaxy$', 'admin123'];
+    // Password check for #7798WFgalaxy$
+    const validPasswords = ['#7798WFgalaxy$'];
     if (validPasswords.includes(password) || !password) {
       const response = NextResponse.json({ success: true });
       

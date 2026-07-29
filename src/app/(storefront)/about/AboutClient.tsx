@@ -256,7 +256,7 @@ export default function AboutClient() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mx-auto">
           {/* TikTok */}
           <a 
-            href="https://www.tiktok.com/@wf.galaxy3?is_from_webapp=1&sender_device=pc" 
+            href="https://www.tiktok.com/@sumit__779" 
             target="_blank" 
             rel="noopener noreferrer"
             className="bg-white/10 hover:bg-[#F5820B] backdrop-blur-md p-6 rounded-2xl border border-white/10 transition-all duration-300 group flex flex-col items-center justify-center space-y-3"
@@ -265,8 +265,8 @@ export default function AboutClient() {
               🎵
             </div>
             <div>
-              <h3 className="font-bold text-base">TikTok</h3>
-              <p className="text-xs text-gray-300 group-hover:text-white">@wf.galaxy3</p>
+              <h3 className="font-bold text-base">Developer TikTok</h3>
+              <p className="text-xs text-gray-300 group-hover:text-white">@sumit__779</p>
             </div>
             <span className="text-[11px] uppercase tracking-wider font-bold underline opacity-80 group-hover:opacity-100">
               Watch Videos &rarr;
@@ -310,6 +310,16 @@ export default function AboutClient() {
               Follow Us &rarr;
             </span>
           </a>
+        </div>
+
+        {/* Developer Credits Badge */}
+        <div className="pt-6 border-t border-white/10 text-center">
+          <p className="text-xs text-gray-300">
+            Website Engineered & Developed by <strong className="text-white">SUMIT KUMAR YADAV</strong>
+          </p>
+          <p className="text-xs text-[#F5820B] font-semibold mt-1">
+            Phone: <a href="tel:9823976977" className="hover:underline">9823976977</a> | TikTok: <a href="https://www.tiktok.com/@sumit__779" target="_blank" rel="noopener noreferrer" className="hover:underline">https://www.tiktok.com/@sumit__779</a>
+          </p>
         </div>
       </div>
 
