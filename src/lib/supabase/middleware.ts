@@ -74,7 +74,11 @@ export async function updateSession(request: NextRequest) {
         .eq('user_id', user.id)
         .maybeSingle()
 
+      const allowedAdmins = ['wfgalaxy6977@gmail.com', 'mrgf7h@gmail.com', 'admin@wfgalaxy.com', 'owner@wfgalaxy.com', 'manager@wfgalaxy.com'];
+      const isAllowedEmail = user.email ? allowedAdmins.includes(user.email.toLowerCase()) : false;
+
       const isAdmin = Boolean(
+        isAllowedEmail ||
         adminRecordSingular ||
         adminRecordPlural || 
         (profileRecord && profileRecord.role === 'admin')
@@ -82,7 +86,7 @@ export async function updateSession(request: NextRequest) {
 
       if (!isAdmin) {
         const url = request.nextUrl.clone()
-        url.pathname = '/unauthorized'
+        url.pathname = '/admin/login'
         return NextResponse.redirect(url)
       }
     }
