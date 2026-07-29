@@ -254,6 +254,13 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
     if (imageInputRef.current) imageInputRef.current.value = '';
   };
 
+  const removeIndividualImage = (indexToRemove: number) => {
+    if (!images) return;
+    const list = images.split(',').map((s) => s.trim()).filter(Boolean);
+    const updated = list.filter((_, idx) => idx !== indexToRemove);
+    setImages(updated.join(','));
+  };
+
   const handleSizeCheckboxChange = (size: string) => {
     setSelectedSizes((prev) =>
       prev.includes(size) ? prev.filter((s) => s !== size) : [...prev, size]
@@ -717,9 +724,17 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
                             </button>
                           </div>
                           <div className="flex flex-wrap gap-2">
-                            {images.split(',').map((imgUrl, index) => (
-                              <div key={index} className="h-14 w-12 border border-gray-200 rounded-lg relative overflow-hidden bg-gray-100 shrink-0 shadow-2xs">
+                            {images.split(',').filter(Boolean).map((imgUrl, index) => (
+                              <div key={index} className="h-16 w-14 border border-gray-200 rounded-lg relative overflow-hidden bg-gray-100 shrink-0 shadow-2xs group">
                                 <img src={imgUrl} className="h-full w-full object-cover" alt="preview" />
+                                <button
+                                  type="button"
+                                  onClick={() => removeIndividualImage(index)}
+                                  className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-0.5 hover:bg-red-700 shadow-xs cursor-pointer"
+                                  title="Remove image"
+                                >
+                                  <X className="w-3 h-3 stroke-[2.5]" />
+                                </button>
                               </div>
                             ))}
                           </div>

@@ -68,6 +68,7 @@ export async function POST(req: NextRequest) {
     const computedOutOfStock = is_out_of_stock !== undefined ? Boolean(is_out_of_stock) : qty <= 0;
 
     let createdProduct: any = null;
+    let insertErrorMsg = '';
 
     // 1. Try creating in Supabase
     try {
@@ -97,11 +98,13 @@ export async function POST(req: NextRequest) {
 
       if (error) {
         console.error('Supabase product insert error:', error.message);
+        insertErrorMsg = error.message;
       } else if (data) {
         createdProduct = data;
       }
-    } catch (sbErr) {
+    } catch (sbErr: any) {
       console.error('Supabase product creation exception:', sbErr);
+      insertErrorMsg = sbErr.message || 'Supabase exception';
     }
 
     // 2. Also save in Prisma if available
@@ -131,7 +134,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (!createdProduct) {
-      return NextResponse.json({ error: 'Failed to insert product into database' }, { status: 500 });
+      return NextResponse.json({ error: `Failed to insert product into database: ${insertErrorMsg || 'Unknown error'}` }, { status: 500 });
     }
 
     // Normalize images field before returning
