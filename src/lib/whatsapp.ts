@@ -20,17 +20,15 @@ export function formatWhatsAppNumber(phone?: string): string {
 export async function shareImageToWhatsApp({
   phone,
   messageText,
-  imageUrl,
 }: {
   phone?: string;
   messageText: string;
   imageUrl?: string;
 }) {
   const targetPhone = formatWhatsAppNumber(phone);
-  const formattedMessage = imageUrl ? `${imageUrl}\n\n${messageText}` : messageText;
-  const encodedMessage = encodeURIComponent(formattedMessage);
+  const encodedMessage = encodeURIComponent(messageText);
   
-  // Official WhatsApp API link that opens directly to target number +9779822039083
+  // Official WhatsApp API link opening directly to target number +9779822039083
   const directWhatsAppUrl = `https://api.whatsapp.com/send?phone=${targetPhone}&text=${encodedMessage}`;
 
   if (typeof window !== 'undefined') {

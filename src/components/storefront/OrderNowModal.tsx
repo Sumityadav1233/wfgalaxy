@@ -8,10 +8,19 @@ interface OrderNowModalProps {
   product: any;
   selectedSize: string;
   selectedImage?: string;
+  selectedPhotoIndex?: number;
+  totalPhotos?: number;
   onClose: () => void;
 }
 
-export default function OrderNowModal({ product, selectedSize, selectedImage, onClose }: OrderNowModalProps) {
+export default function OrderNowModal({
+  product,
+  selectedSize,
+  selectedImage,
+  selectedPhotoIndex,
+  totalPhotos,
+  onClose,
+}: OrderNowModalProps) {
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -31,13 +40,21 @@ export default function OrderNowModal({ product, selectedSize, selectedImage, on
       : (typeof product.image_urls === 'string' ? product.image_urls.split(',')[0] : '')
   ) || 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=600&auto=format&fit=crop';
 
+  const photoBadgeText = (selectedPhotoIndex !== undefined && totalPhotos && totalPhotos > 1)
+    ? `Photo #${selectedPhotoIndex + 1} of ${totalPhotos}`
+    : `Main Photo`;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '';
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://wfgalaxy.vercel.app';
+    const productPreviewUrl = `${baseUrl}/product/${product.id}?img=${encodeURIComponent(activeImageUrl)}`;
     const totalPrice = (Number(product.price) || 0) * formData.quantity;
 
-    const messageText = `*NEW ORDER - WF GALAXY*
+    const messageText = `${productPreviewUrl}
+
+*NEW ORDER - WF GALAXY*
 
 *Customer Details:*
 • Name: ${formData.name}
@@ -46,6 +63,7 @@ export default function OrderNowModal({ product, selectedSize, selectedImage, on
 
 *Order Details:*
 • Item: ${product.name}
+• Selected Photo: ${photoBadgeText}
 • Size: ${selectedSize || 'Standard'}
 • Unit Price: Rs. ${Number(product.price || 0).toLocaleString()}
 • Quantity: ${formData.quantity}
@@ -82,15 +100,20 @@ Please confirm my order details and dispatch timeline. Thank you!`;
         <div className="p-6 overflow-y-auto">
           {/* Selected Item & Photo Preview Header */}
           <div className="flex gap-4 items-center mb-6 p-4 bg-orange-50 rounded-xl border border-orange-200">
-            <img 
-              src={activeImageUrl} 
-              alt={product.name} 
-              className="w-20 h-20 object-cover rounded-lg border-2 border-[#F5820B] shadow-sm flex-shrink-0"
-            />
+            <div className="relative flex-shrink-0">
+              <img 
+                src={activeImageUrl} 
+                alt={product.name} 
+                className="w-20 h-20 object-cover rounded-lg border-2 border-[#F5820B] shadow-sm"
+              />
+              <span className="absolute -top-2 -right-2 bg-[#3B2A20] text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-xs">
+                {selectedPhotoIndex !== undefined ? `#${selectedPhotoIndex + 1}` : '#1'}
+              </span>
+            </div>
             <div>
               <h4 className="font-bold text-[#3B2A20] text-base">{product.name}</h4>
               <p className="text-xs font-semibold text-[#F5820B] mt-0.5">
-                Selected Photo Variant attached for WhatsApp
+                Selected Variant: {photoBadgeText}
               </p>
               <p className="text-sm font-bold text-gray-700 mt-1">
                 Size: {selectedSize || 'Standard'} | Rs. {Number(product.price || 0).toLocaleString()}

@@ -48,6 +48,11 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
   const [selectedSize, setSelectedSize] = useState<string>(sizes[0] || '');
   const [selectedColor, setSelectedColor] = useState<string>(colors[0] || '');
 
+  const selectedPhotoIndex = useMemo(() => {
+    const idx = images.indexOf(selectedImage);
+    return idx !== -1 ? idx : 0;
+  }, [images, selectedImage]);
+
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [showOutOfStockModal, setShowOutOfStockModal] = useState(false);
   const [addedToCartSuccess, setAddedToCartSuccess] = useState(false);
@@ -385,6 +390,8 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
           }} 
           selectedSize={selectedSize}
           selectedImage={selectedImage}
+          selectedPhotoIndex={selectedPhotoIndex}
+          totalPhotos={images.length}
           onClose={() => setIsOrderModalOpen(false)} 
         />
       )}
