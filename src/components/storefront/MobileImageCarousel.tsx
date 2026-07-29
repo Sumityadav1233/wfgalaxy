@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
-import { ChevronLeft, ChevronRight, Maximize2, MessageCircle, X } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { ChevronLeft, ChevronRight, Maximize2, MessageCircle, X, ArrowLeft } from 'lucide-react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
 interface MobileImageCarouselProps {
   images: string[];
@@ -19,6 +20,7 @@ export default function MobileImageCarousel({
   productSize = '',
   isOutOfStock = false,
 }: MobileImageCarouselProps) {
+  const router = useRouter();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const touchStartX = useRef<number | null>(null);
@@ -27,12 +29,51 @@ export default function MobileImageCarousel({
     images = ['https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=600&auto=format&fit=crop'];
   }
 
+  useEffect(() => {
+    if (isLightboxOpen) {
+      document.body.style.overflow = 'hidden';
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') setIsLightboxOpen(false);
+      };
+      window.addEventListener('keydown', handleKeyDown);
+      return () => {
+        document.body.style.overflow = '';
+        window.removeEventListener('keydown', handleKeyDown);
+      };
+    }
+  }, [isLightboxOpen]);
+
   const nextImage = () => {
     setCurrentIndex((prev) => (prev + 1) % images.length);
   };
 
   const prevImage = () => {
     setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
+  };
+
+  const closeLightbox = (e?: React.SyntheticEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    setIsLightboxOpen(false);
+  };
+
+  const handleBackToStore = (e?: React.SyntheticEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    setIsLightboxOpen(false);
+    try {
+      if (window.history.length > 1) {
+        router.back();
+      } else {
+        router.push('/shop');
+      }
+    } catch {
+      router.push('/shop');
+    }
   };
 
   // Touch handlers for mobile swipe
@@ -91,7 +132,11 @@ Hello WF GALAXY, I would like to order this item!`;
             e.stopPropagation();
             setIsLightboxOpen(true);
           }}
-          className="absolute top-3 right-3 bg-black/60 hover:bg-black/80 backdrop-blur-md text-white p-2 rounded-full shadow-md transition-colors z-10"
+          onTouchEnd={(e) => {
+            e.stopPropagation();
+            setIsLightboxOpen(true);
+          }}
+          className="absolute top-3 right-3 bg-black/60 hover:bg-black/80 backdrop-blur-md text-white p-2 rounded-full shadow-md transition-colors z-10 cursor-pointer"
           aria-label="View full size image"
         >
           <Maximize2 className="w-4 h-4" />
@@ -167,29 +212,71 @@ Hello WF GALAXY, I would like to order this item!`;
       {/* Lightbox Full Size Image Modal */}
       {isLightboxOpen && (
         <div
-          className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md flex items-center justify-center p-4"
-          onClick={() => setIsLightboxOpen(false)}
+          className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-md flex flex-col items-center justify-between p-4"
+          onClick={closeLightbox}
+          onTouchEnd={closeLightbox}
         >
-          <button
-            onClick={() => setIsLightboxOpen(false)}
-            className="absolute top-4 right-4 text-white hover:text-gray-300 p-2 rounded-full bg-white/10"
-            aria-label="Close image lightbox"
-          >
-            <X className="w-6 h-6" />
-          </button>
-
-          <div
-            className="relative max-w-4xl max-h-[90vh] w-full h-full flex items-center justify-center"
+          {/* Top Header Bar with Navigation Back & Large Close Cross Button */}
+          <div 
+            className="w-full flex items-center justify-between pt-8 sm:pt-6 px-3 sm:px-6 z-[10000]"
             onClick={(e) => e.stopPropagation()}
+            onTouchEnd={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={handleBackToStore}
+              onTouchEnd={handleBackToStore}
+              className="flex items-center gap-1.5 text-white/90 bg-white/10 hover:bg-white/20 active:scale-95 px-3.5 py-2 rounded-full text-xs font-bold uppercase tracking-wider backdrop-blur-md border border-white/20 transition-all cursor-pointer"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Showcase</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={closeLightbox}
+              onTouchEnd={closeLightbox}
+              className="w-12 h-12 flex items-center justify-center text-white bg-white/20 hover:bg-white/30 active:scale-90 rounded-full backdrop-blur-md border border-white/30 transition-all cursor-pointer shadow-xl"
+              aria-label="Close image lightbox"
+            >
+              <X className="w-7 h-7 stroke-[2.5]" />
+            </button>
+          </div>
+
+          {/* Center Image Display */}
+          <div
+            className="relative max-w-4xl max-h-[75vh] w-full h-full flex items-center justify-center my-auto"
+            onClick={closeLightbox}
           >
             <img
               src={images[currentIndex]}
               alt={`${productName} full view`}
-              className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"
+              className="max-w-full max-h-[75vh] object-contain rounded-xl shadow-2xl"
             />
+          </div>
+
+          {/* Bottom Bar Controls */}
+          <div 
+            className="w-full flex items-center justify-between pb-6 px-4 z-[10000]"
+            onClick={(e) => e.stopPropagation()}
+            onTouchEnd={(e) => e.stopPropagation()}
+          >
+            <div className="text-white text-xs font-medium bg-black/50 px-3 py-1.5 rounded-full border border-white/10">
+              {currentIndex + 1} / {images.length}
+            </div>
+
+            <button
+              type="button"
+              onClick={handleWhatsAppRedirect}
+              className="bg-[#25D366] text-white px-4 py-2 rounded-full font-bold text-xs shadow-lg flex items-center gap-1.5 active:scale-95 transition-transform"
+            >
+              <MessageCircle className="w-4 h-4" />
+              <span>Ask on WhatsApp</span>
+            </button>
           </div>
         </div>
       )}
     </div>
   );
 }
+
