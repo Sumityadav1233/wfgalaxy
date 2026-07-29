@@ -113,14 +113,13 @@ export default function MobileImageCarousel({
 
   const handleWhatsAppRedirect = () => {
     const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '';
-    const currentImageUrl = images[currentIndex] || images[0];
     
-    const message = `${currentImageUrl}
+    const message = `*INQUIRY / ORDER - WF GALAXY*
 
-*Inquiry / Order: ${productName}*
-Price: Rs. ${productPrice.toLocaleString()}
-${productSize ? `Size: ${productSize}\n` : ''}
-Hello WF GALAXY, I would like to order this selected item photo!`;
+• Item: ${productName}
+• Price: Rs. ${productPrice.toLocaleString()}
+${productSize ? `• Selected Size: ${productSize}\n` : ''}
+Hello WF GALAXY, I would like to order this item!`;
 
     const encodedMessage = encodeURIComponent(message);
     const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;

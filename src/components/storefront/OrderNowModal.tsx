@@ -38,13 +38,8 @@ export default function OrderNowModal({ product, selectedSize, selectedImage, on
     // Calculate total price
     const totalPrice = (Number(product.price) || 0) * formData.quantity;
 
-    // Construct enhanced WhatsApp message with product link on line 1 for auto photo preview card
-    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://wfgalaxy.vercel.app';
-    const productPreviewUrl = `${baseUrl}/product/${product.id}?img=${encodeURIComponent(activeImageUrl)}`;
-
-    const message = `${productPreviewUrl}
-
-*NEW ORDER: ${product.name}*
+    // Construct clean WhatsApp message with NO URL links
+    const message = `*NEW ORDER - WF GALAXY*
 
 *Customer Details:*
 • Name: ${formData.name}
@@ -57,9 +52,6 @@ export default function OrderNowModal({ product, selectedSize, selectedImage, on
 • Unit Price: Rs. ${Number(product.price || 0).toLocaleString()}
 • Quantity: ${formData.quantity}
 • Total Price: Rs. ${totalPrice.toLocaleString()}
-
-*Direct Selected Image:*
-${activeImageUrl}
 
 *Special Notes:*
 ${formData.notes || 'None'}
