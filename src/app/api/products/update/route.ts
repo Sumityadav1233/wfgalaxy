@@ -1,101 +1,136 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
-import { createClient } from '@/lib/supabase/server';
+import { createPublicClient } from '@/lib/supabase/server';
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { id, name, description, price, category, subcategory, sizes, colors, images, image_url, videoUrl, stock_quantity, low_stock_threshold, is_out_of_stock } = body;
+    const {
+      id,
+      name,
+      description,
+      price,
+      category,
+      subcategory,
+      sizes,
+      colors,
+      images,
+      image_url,
+      videoUrl,
+      video_url,
+      stock_quantity,
+      low_stock_threshold,
+      is_out_of_stock,
+    } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'Missing product ID' }, { status: 400 });
     }
 
-    const updateData: Record<string, any> = {};
+    const numId = Number(id);
+    const targetId = !isNaN(numId) ? numId : id;
 
-    if (name !== undefined) updateData.name = name;
-    if (description !== undefined) updateData.description = description;
-    if (price !== undefined) updateData.price = parseFloat(price);
-    if (category !== undefined) updateData.category = category;
-    if (subcategory !== undefined) updateData.subcategory = subcategory || null;
-    if (sizes !== undefined) updateData.sizes = Array.isArray(sizes) ? sizes.join(',') : String(sizes);
-    if (colors !== undefined) updateData.colors = Array.isArray(colors) ? colors.join(',') : String(colors);
-    
-    const rawImagesStr = images || image_url;
-    if (rawImagesStr !== undefined) {
-      const imgStr = Array.isArray(rawImagesStr) ? rawImagesStr.join(',') : String(rawImagesStr);
-      updateData.images = imgStr;
-      updateData.image_url = imgStr;
+    // Prepare Supabase Postgres payload matching exact column names
+    const sbPayload: Record<string, any> = {
+      updated_at: new Date().toISOString(),
+    };
+
+    if (name !== undefined) sbPayload.name = String(name).trim();
+    if (description !== undefined) sbPayload.description = String(description).trim();
+    if (price !== undefined) sbPayload.price = parseFloat(price);
+    if (category !== undefined) sbPayload.category = String(category).trim().toLowerCase();
+    if (subcategory !== undefined) sbPayload.subcategory = subcategory ? String(subcategory).trim().toLowerCase() : null;
+    if (sizes !== undefined) sbPayload.sizes = Array.isArray(sizes) ? sizes.join(',') : String(sizes);
+    if (colors !== undefined) sbPayload.colors = Array.isArray(colors) ? colors.join(',') : String(colors);
+
+    const rawImages = images || image_url;
+    if (rawImages !== undefined) {
+      const imgStr = Array.isArray(rawImages) ? rawImages.join(',') : String(rawImages);
+      sbPayload.image_url = imgStr;
+      sbPayload.images = imgStr;
     }
-    
-    if (videoUrl !== undefined) updateData.videoUrl = videoUrl || null;
-    
+
+    const rawVideo = videoUrl || video_url;
+    if (rawVideo !== undefined) {
+      sbPayload.video_url = rawVideo ? String(rawVideo).trim() : null;
+    }
+
     if (stock_quantity !== undefined) {
       const qty = parseInt(stock_quantity, 10) || 0;
-      updateData.stock_quantity = qty;
-      updateData.is_out_of_stock = is_out_of_stock !== undefined ? Boolean(is_out_of_stock) : qty <= 0;
+      sbPayload.stock_quantity = qty;
+      sbPayload.is_out_of_stock = is_out_of_stock !== undefined ? Boolean(is_out_of_stock) : qty <= 0;
     } else if (is_out_of_stock !== undefined) {
-      updateData.is_out_of_stock = Boolean(is_out_of_stock);
+      sbPayload.is_out_of_stock = Boolean(is_out_of_stock);
     }
 
     if (low_stock_threshold !== undefined) {
-      updateData.low_stock_threshold = parseInt(low_stock_threshold, 10) || 10;
+      sbPayload.low_stock_threshold = parseInt(low_stock_threshold, 10) || 10;
     }
 
     let resultProduct: any = null;
+    let sbErrorMsg = '';
 
-    // 1. Try updating in Supabase
+    // 1. Update in Supabase Postgres
     try {
-      const supabase = await createClient();
-      const sbUpdateData: Record<string, any> = { ...updateData };
-      delete sbUpdateData.images; // Prefer image_url column in Supabase schema
-
-      const { data, error } = await supabase
+      const supabase = createPublicClient();
+      
+      // Try with targetId (number or string)
+      let { data, error } = await supabase
         .from('products')
-        .update(sbUpdateData)
-        .eq('id', id)
+        .update(sbPayload)
+        .eq('id', targetId)
         .select()
-        .single();
+        .maybeSingle();
+
+      // If no match and targetId was a number, try matching string id or vice-versa
+      if (!data && !error && typeof targetId === 'number') {
+        const { data: strData, error: strError } = await supabase
+          .from('products')
+          .update(sbPayload)
+          .eq('id', String(id))
+          .select()
+          .maybeSingle();
+        if (strData) data = strData;
+        if (strError) error = strError;
+      }
 
       if (error) {
-        console.warn('Supabase update notice (image_url):', error.message);
-        // Fallback update with images column
-        const altUpdateData: Record<string, any> = { ...updateData };
-        delete altUpdateData.image_url;
-        const { data: fbData, error: fbError } = await supabase
-          .from('products')
-          .update(altUpdateData)
-          .eq('id', id)
-          .select()
-          .single();
-
-        if (fbData && !fbError) {
-          resultProduct = fbData;
-        }
+        console.error('Supabase product update error:', error.message);
+        sbErrorMsg = error.message;
       } else if (data) {
         resultProduct = data;
       }
-    } catch (sbErr) {
-      console.warn('Supabase update error notice:', sbErr);
+    } catch (sbErr: any) {
+      console.error('Supabase product update exception:', sbErr);
+      sbErrorMsg = sbErr.message || 'Supabase exception';
     }
 
-    // 2. Also update in Prisma
+    // 2. Also update in Prisma if available
     try {
-      const prismaUpdateData = { ...updateData };
-      delete prismaUpdateData.image_url; // Prisma schema uses images string
+      const prismaPayload: Record<string, any> = { ...sbPayload };
+      delete prismaPayload.image_url;
+      delete prismaPayload.video_url;
+      if (rawVideo !== undefined) {
+        prismaPayload.videoUrl = rawVideo ? String(rawVideo).trim() : null;
+      }
+
       const prismaProduct = await prisma.product.update({
-        where: { id },
-        data: prismaUpdateData,
+        where: { id: String(id) },
+        data: prismaPayload,
       });
+
       if (!resultProduct) {
         resultProduct = prismaProduct;
       }
-    } catch (prismaErr) {
-      console.warn('Prisma update error notice:', prismaErr);
+    } catch (prismaErr: any) {
+      console.warn('Prisma update fallback notice:', prismaErr.message || prismaErr);
     }
 
     if (!resultProduct) {
-      resultProduct = { id, ...updateData };
+      return NextResponse.json({
+        error: 'Failed to update product in database',
+        details: sbErrorMsg || 'No record was modified in Supabase or Prisma'
+      }, { status: 500 });
     }
 
     if (resultProduct && !resultProduct.images && resultProduct.image_url) {
@@ -104,7 +139,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(resultProduct);
   } catch (error: any) {
-    console.error('Product Update Error:', error);
+    console.error('Product Update Route Exception:', error);
     return NextResponse.json({ error: 'Internal server error', details: error.message }, { status: 500 });
   }
 }

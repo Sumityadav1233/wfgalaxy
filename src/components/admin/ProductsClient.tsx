@@ -342,15 +342,13 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
           body: JSON.stringify({ id: editingProduct.id, ...payload }),
         });
 
-        let updatedProd = { id: editingProduct.id, ...payload };
-        if (res.ok) {
-          try {
-            const data = await res.json();
-            if (data && data.id) updatedProd = { ...updatedProd, ...data };
-          } catch {}
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || errData.details || 'Failed to update product in database');
         }
 
-        setProducts((prev) => prev.map((p) => (p.id === editingProduct.id ? updatedProd : p)));
+        const updatedProd = await res.json();
+        setProducts((prev) => prev.map((p) => (p.id === editingProduct.id ? { ...p, ...updatedProd } : p)));
         setIsFormOpen(false);
         alert('Product updated successfully!');
       } else {
