@@ -3,17 +3,14 @@ import { createPublicClient } from '@/lib/supabase/server';
 import prisma from '@/lib/db';
 import { notFound } from 'next/navigation';
 import ProductDetailClient from '@/components/storefront/ProductDetailClient';
+import { Metadata } from 'next';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-export default async function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = await params;
-  const productId = resolvedParams.id;
-
+async function fetchProductData(productId: string) {
   let product: any = null;
 
-  // 1. Attempt lookup in Supabase
   try {
     const supabase = createPublicClient();
     const numId = Number(productId);
@@ -33,26 +30,74 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
       if (numData) data = numData;
     }
 
-    if (data) {
-      product = data;
-    }
+    if (data) product = data;
   } catch (err) {
-    console.error('Supabase product fetch failed, falling back to Prisma:', err);
+    console.error('Supabase product fetch failed:', err);
   }
 
-  // 2. Fallback to Prisma SQLite if not found in Supabase
   if (!product) {
     try {
       const prismaProduct = await prisma.product.findUnique({
         where: { id: productId },
       });
-      if (prismaProduct) {
-        product = prismaProduct;
-      }
+      if (prismaProduct) product = prismaProduct;
     } catch (err) {
       console.error('Prisma product fetch error:', err);
     }
   }
+
+  return product;
+}
+
+export async function generateMetadata({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams?: Promise<{ img?: string }>;
+}): Promise<Metadata> {
+  const resolvedParams = await params;
+  const resolvedSearchParams = await searchParams;
+  const product = await fetchProductData(resolvedParams.id);
+
+  if (!product) {
+    return {
+      title: 'Product Not Found | WF GALAXY',
+    };
+  }
+
+  const fallbackImg = Array.isArray(product.image_urls) && product.image_urls.length > 0
+    ? product.image_urls[0]
+    : (typeof product.image_urls === 'string' ? product.image_urls.split(',')[0] : 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=600&auto=format&fit=crop');
+
+  const selectedImg = resolvedSearchParams?.img || fallbackImg;
+
+  return {
+    title: `${product.name} | WF GALAXY`,
+    description: `Rs. ${Number(product.price || 0).toLocaleString()} - ${product.description || 'WF GALAXY Luxury Boutique Janakpur'}`,
+    openGraph: {
+      title: product.name,
+      description: `Rs. ${Number(product.price || 0).toLocaleString()} | WF GALAXY Janakpur`,
+      images: [
+        {
+          url: selectedImg,
+          width: 800,
+          height: 1000,
+          alt: product.name,
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: product.name,
+      images: [selectedImg],
+    },
+  };
+}
+
+export default async function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = await params;
+  const product = await fetchProductData(resolvedParams.id);
 
   if (!product) {
     notFound();

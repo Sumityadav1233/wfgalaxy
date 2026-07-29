@@ -115,8 +115,9 @@ export default function MobileImageCarousel({
     const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '';
     const currentImageUrl = images[currentIndex] || images[0];
     
-    const message = `*Inquiry / Order: ${productName}*
-📷 *Selected Photo:* ${currentImageUrl}
+    const message = `${currentImageUrl}
+
+*Inquiry / Order: ${productName}*
 Price: Rs. ${productPrice.toLocaleString()}
 ${productSize ? `Size: ${productSize}\n` : ''}
 Hello WF GALAXY, I would like to order this selected item photo!`;
