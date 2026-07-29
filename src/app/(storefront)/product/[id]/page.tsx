@@ -8,7 +8,43 @@ import { Metadata } from 'next';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-async function fetchProductData(productId: string) {
+function sanitizeProductId(id: string): string | null {
+  if (!id || typeof id !== 'string') return null;
+
+  let decoded = id;
+  try {
+    decoded = decodeURIComponent(id);
+  } catch {
+    return null;
+  }
+
+  const lower = decoded.toLowerCase();
+  // Block directory/path traversal patterns
+  if (
+    lower.includes('..') ||
+    lower.includes('/') ||
+    lower.includes('\\') ||
+    lower.includes('\0') ||
+    lower.includes('%2e') ||
+    lower.includes('%2f') ||
+    lower.includes('%5c')
+  ) {
+    return null;
+  }
+
+  const cleanId = decoded.trim();
+  // Allow only valid alphanumeric IDs, UUIDs, or hyphens/underscores
+  if (!/^[a-zA-Z0-9_-]+$/.test(cleanId)) {
+    return null;
+  }
+
+  return cleanId;
+}
+
+async function fetchProductData(rawProductId: string) {
+  const productId = sanitizeProductId(rawProductId);
+  if (!productId) return null;
+
   let product: any = null;
 
   try {

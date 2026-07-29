@@ -1,9 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
-import { createPublicClient } from '@/lib/supabase/server';
+import { createClient, createPublicClient } from '@/lib/supabase/server';
+import { cookies } from 'next/headers';
 
 export async function POST(req: NextRequest) {
   try {
+    const cookieStore = await cookies();
+    const adminSession = cookieStore.get('wf_galaxy_admin_session')?.value;
+    const supabaseClient = await createClient();
+    const { data: { user } } = await supabaseClient.auth.getUser();
+
+    if (!user && !adminSession) {
+      return NextResponse.json({ error: 'Unauthorized: Admin access required' }, { status: 401 });
+    }
+
     const body = await req.json();
     const {
       id,
@@ -23,8 +33,13 @@ export async function POST(req: NextRequest) {
       is_out_of_stock,
     } = body;
 
-    if (!id) {
+    if (!id || typeof id === 'object') {
       return NextResponse.json({ error: 'Missing product ID' }, { status: 400 });
+    }
+
+    const cleanIdStr = String(id).trim();
+    if (cleanIdStr.includes('..') || cleanIdStr.includes('/') || cleanIdStr.includes('\\')) {
+      return NextResponse.json({ error: 'Invalid product ID parameter' }, { status: 400 });
     }
 
     const numId = Number(id);

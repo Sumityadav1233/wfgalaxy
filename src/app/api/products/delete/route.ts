@@ -1,14 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import { createClient, createPublicClient } from '@/lib/supabase/server';
+import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 
 export async function POST(req: NextRequest) {
   try {
+    const cookieStore = await cookies();
+    const adminSession = cookieStore.get('wf_galaxy_admin_session')?.value;
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user && !adminSession) {
+      return NextResponse.json({ error: 'Unauthorized: Admin access required' }, { status: 401 });
+    }
+
     const { id } = await req.json();
 
-    if (!id) {
+    if (!id || typeof id === 'object') {
       return NextResponse.json({ error: 'Product ID is required' }, { status: 400 });
+    }
+
+    const cleanId = String(id).trim();
+    if (cleanId.includes('..') || cleanId.includes('/') || cleanId.includes('\\')) {
+      return NextResponse.json({ error: 'Invalid product ID parameter' }, { status: 400 });
     }
 
     let deletedProduct: any = null;
