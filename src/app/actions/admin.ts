@@ -1,13 +1,20 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 
 // Helper to check admin access for authenticated admin users
 async function checkAdminAccess() {
+  const cookieStore = await cookies();
+  const adminSession = cookieStore.get('wf_galaxy_admin_session')?.value;
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('Unauthorized: Please log in to Admin');
+  
+  if (!user && !adminSession) {
+    throw new Error('Unauthorized: Please log in to Admin');
+  }
   
   return supabase;
 }
@@ -59,18 +66,15 @@ export async function addProduct(productData: any) {
 export async function deleteSubcategory(id: string, subcategoryName: string) {
   const supabase = await checkAdminAccess();
   
-  // 1. Check if any products are assigned to this subcategory
-  const { data: existingProducts } = await supabase
-    .from('products')
-    .select('id')
-    .ilike('subcategory', subcategoryName)
-    .limit(1);
-
-  if (existingProducts && existingProducts.length > 0) {
-    throw new Error(`Cannot delete subcategory "${subcategoryName}" because products are still assigned to it. Please move or delete those products first.`);
+  // 1. Clear subcategory reference from any products in backend database
+  if (subcategoryName && subcategoryName.trim()) {
+    await supabase
+      .from('products')
+      .update({ subcategory: '' })
+      .ilike('subcategory', subcategoryName.trim());
   }
 
-  // 2. Delete the subcategory
+  // 2. Delete the subcategory from backend database
   const { error } = await supabase
     .from('subcategories')
     .delete()

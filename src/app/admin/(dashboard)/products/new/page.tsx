@@ -199,8 +199,10 @@ export default function AdminNewProductPage() {
                 className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 focus:outline-hidden focus:border-[#F5820B]"
               >
                 <option value="">Select a subcategory</option>
-                {/* Filter subcategories by selected category if we matched by ID, but since schema uses string, we'll just list them. Ideally, match by name. */}
-                {subcategories.filter(s => s.categories?.name === formData.category).map(sub => (
+                {subcategories.filter(s => {
+                  const cName = s.categories?.name?.toLowerCase();
+                  return cName ? cName === formData.category.toLowerCase() : true;
+                }).map(sub => (
                   <option key={sub.id} value={sub.name}>{sub.name}</option>
                 ))}
               </select>

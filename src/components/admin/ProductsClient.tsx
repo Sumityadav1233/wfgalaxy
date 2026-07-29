@@ -72,35 +72,43 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
   const imageInputRef = useRef<HTMLInputElement>(null);
   const sizesOptions = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', '4XL', '5XL'];
 
-  // Compute available subcategories dynamically filtered by selected Main Category (Issue 2)
+  // Compute available subcategories dynamically filtered by selected Main Category directly from backend DB
   const availableSubcategories = useMemo(() => {
     const normCat = (category || 'men').toLowerCase();
     
     // Subcategories from database for this category
     const dbSubs = dbSubcategories
-      .filter((s) => s.categories?.name?.toLowerCase() === normCat)
+      .filter((s) => {
+        const catName = s.categories?.name?.toLowerCase();
+        return catName ? catName === normCat : true;
+      })
       .map((s) => s.name);
 
-    // Fallback/standard subcategories for this category
-    const defaultSubs = SUBCATEGORY_MAP[normCat] || ["Formal", "hoodies", "Jackets", "Jeans", "shirts"];
+    if (dbSubs.length > 0) {
+      return Array.from(new Set(dbSubs));
+    }
 
-    // Deduplicate
-    const combined = Array.from(new Set([...dbSubs, ...defaultSubs]));
-    return combined;
+    // Fallback/standard subcategories for this category if DB subcategories are empty
+    const defaultSubs = SUBCATEGORY_MAP[normCat] || ["Formal", "hoodies", "Jackets", "Jeans", "shirts"];
+    return Array.from(new Set(defaultSubs));
   }, [category, dbSubcategories]);
+
+  const loadSubcategoriesFromDB = async () => {
+    try {
+      const supabase = createClient();
+      const { data: subs } = await supabase
+        .from('subcategories')
+        .select('*, categories(name)')
+        .order('name');
+      if (subs) setDbSubcategories(subs);
+    } catch (err) {
+      console.warn('Subcategories load notice:', err);
+    }
+  };
 
   // Fetch dynamic subcategories from Supabase and handle URL search parameters
   useEffect(() => {
-    async function loadCategoriesAndSubs() {
-      try {
-        const supabase = createClient();
-        const { data: subs } = await supabase.from('subcategories').select('*, categories(name)').order('name');
-        if (subs && subs.length > 0) setDbSubcategories(subs);
-      } catch (err) {
-        console.warn('Subcategories load notice:', err);
-      }
-    }
-    loadCategoriesAndSubs();
+    loadSubcategoriesFromDB();
 
     // Check URL parameters for direct category navigation (e.g., from categories page)
     if (typeof window !== 'undefined') {
@@ -118,6 +126,7 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
   }, []);
 
   const openAddForm = () => {
+    loadSubcategoriesFromDB();
     setEditingProduct(null);
     setName('');
     setDescription('');
@@ -136,6 +145,7 @@ export const ProductsClient: React.FC<ProductsClientProps> = ({ initialProducts 
   };
 
   const openEditForm = (prod: Product) => {
+    loadSubcategoriesFromDB();
     setEditingProduct(prod);
     setName(prod.name);
     setDescription(prod.description);
