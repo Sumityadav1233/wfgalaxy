@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     if (action === 'connect') {
       const defaultNames: { [key: string]: string } = {
         youtube: 'WF GALAXY Official',
-        tiktok: '@wf_galaxy',
+        tiktok: '@wf.galaxy3',
         instagram: '@wf.galaxy',
         facebook: 'WF Galaxy Shop',
         linkedin: 'WF GALAXY Corporate',

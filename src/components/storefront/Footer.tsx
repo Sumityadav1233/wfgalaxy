@@ -21,7 +21,7 @@ export default function Footer() {
               Carry style with confidence. Premium fashion & luxury outerwear designed for the modern lifestyle. Located at Shiv Chowk, PWHH+RVJ, Janakpur 45600.
             </p>
             <div className="flex space-x-4 items-center">
-              <a href="https://www.tiktok.com/@sumit__779" target="_blank" rel="noopener noreferrer" className="text-gray-400 font-bold text-sm hover:text-[#F5820B] transition-colors">TikTok</a>
+              <a href="https://www.tiktok.com/@wf.galaxy3?is_from_webapp=1&sender_device=pc" target="_blank" rel="noopener noreferrer" className="text-gray-400 font-bold text-sm hover:text-[#F5820B] transition-colors">TikTok</a>
               <a href="https://www.instagram.com/wfgalaxy03" target="_blank" rel="noopener noreferrer" className="text-gray-400 font-bold text-sm hover:text-[#F5820B] transition-colors">IG</a>
               <a href="https://facebook.com/wfgalaxy" target="_blank" rel="noopener noreferrer" className="text-gray-400 font-bold text-sm hover:text-[#F5820B] transition-colors">FB</a>
             </div>
@@ -69,7 +69,7 @@ export default function Footer() {
               &copy; {new Date().getFullYear()} WF GALAXY. All rights reserved. Shiv Chowk, Janakpur.
             </p>
             <p className="text-xs text-gray-500 mt-1">
-              Developed by <strong className="text-[#3B2A20]">SUMIT KUMAR YADAV</strong> | Phone: <a href="tel:9823976977" className="hover:text-[#F5820B] font-semibold">9823976977</a> | TikTok: <a href="https://www.tiktok.com/@sumit__779" target="_blank" rel="noopener noreferrer" className="hover:text-[#F5820B] font-semibold text-[#F5820B]">@sumit__779</a>
+              Developed by <strong className="text-[#3B2A20]">SUMIT KUMAR YADAV</strong> | Phone: <a href="tel:9823976977" className="hover:text-[#F5820B] font-semibold">9823976977</a> | Owner TikTok: <a href="https://www.tiktok.com/@wf.galaxy3?is_from_webapp=1&sender_device=pc" target="_blank" rel="noopener noreferrer" className="hover:text-[#F5820B] font-semibold text-[#F5820B]">@wf.galaxy3</a> | Dev TikTok: <a href="https://www.tiktok.com/@sumit__779" target="_blank" rel="noopener noreferrer" className="hover:text-[#F5820B] font-semibold text-[#F5820B]">@sumit__779</a>
             </p>
           </div>
           <div className="flex space-x-6 text-xs text-gray-400">

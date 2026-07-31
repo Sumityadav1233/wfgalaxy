@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect(`${protocol}://${host}/admin/social?error=no_code`);
     }
 
-    let accountName = '@wf_galaxy';
+    let accountName = '@wf.galaxy3';
     let accessToken = 'mock-tiktok-access-token';
     let refreshToken = 'mock-tiktok-refresh-token';
     let expiresAt = new Date(Date.now() + 3600 * 1000);

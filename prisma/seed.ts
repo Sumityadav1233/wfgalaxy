@@ -32,7 +32,7 @@ async function main() {
   console.log('Seeding social accounts...');
   const socialAccounts = [
     { platform: 'youtube', connectionStatus: 'connected', accountName: 'WF GALAXY Official' },
-    { platform: 'tiktok', connectionStatus: 'connected', accountName: '@wf_galaxy' },
+    { platform: 'tiktok', connectionStatus: 'connected', accountName: '@wf.galaxy3' },
     { platform: 'instagram', connectionStatus: 'connected', accountName: '@wf.galaxy' },
     { platform: 'facebook', connectionStatus: 'disconnected', accountName: 'WF Galaxy Shop' },
   ];

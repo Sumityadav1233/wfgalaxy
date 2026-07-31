@@ -253,8 +253,27 @@ export default function AboutClient() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mx-auto">
-          {/* TikTok */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
+          {/* Owner TikTok */}
+          <a 
+            href="https://www.tiktok.com/@wf.galaxy3?is_from_webapp=1&sender_device=pc" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="bg-white/10 hover:bg-[#F5820B] backdrop-blur-md p-6 rounded-2xl border border-white/10 transition-all duration-300 group flex flex-col items-center justify-center space-y-3"
+          >
+            <div className="w-12 h-12 rounded-full bg-white text-[#3B2A20] flex items-center justify-center group-hover:scale-110 transition-transform font-bold text-lg">
+              🎵
+            </div>
+            <div>
+              <h3 className="font-bold text-base">Owner TikTok</h3>
+              <p className="text-xs text-gray-300 group-hover:text-white">@wf.galaxy3</p>
+            </div>
+            <span className="text-[11px] uppercase tracking-wider font-bold underline opacity-80 group-hover:opacity-100">
+              Watch Videos &rarr;
+            </span>
+          </a>
+
+          {/* Developer TikTok */}
           <a 
             href="https://www.tiktok.com/@sumit__779" 
             target="_blank" 
@@ -318,7 +337,7 @@ export default function AboutClient() {
             Website Engineered & Developed by <strong className="text-white">SUMIT KUMAR YADAV</strong>
           </p>
           <p className="text-xs text-[#F5820B] font-semibold mt-1">
-            Phone: <a href="tel:9823976977" className="hover:underline">9823976977</a> | TikTok: <a href="https://www.tiktok.com/@sumit__779" target="_blank" rel="noopener noreferrer" className="hover:underline">https://www.tiktok.com/@sumit__779</a>
+            Phone: <a href="tel:9823976977" className="hover:underline">9823976977</a> | Owner TikTok: <a href="https://www.tiktok.com/@wf.galaxy3?is_from_webapp=1&sender_device=pc" target="_blank" rel="noopener noreferrer" className="hover:underline">@wf.galaxy3</a> | Developer TikTok: <a href="https://www.tiktok.com/@sumit__779" target="_blank" rel="noopener noreferrer" className="hover:underline">@sumit__779</a>
           </p>
         </div>
       </div>
